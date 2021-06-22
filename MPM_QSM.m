@@ -47,13 +47,13 @@ for run = 1:3
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054' ;
             ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0055' ;
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/pdw_RR_58_59/' ;
+            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/pdw_RR_54_55/' ;
             
         case 2 % t1w
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0056' ;
             ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0057' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; % echo time in ms
-            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/t1w_RR_58_59/' ;
+            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/t1w_RR_56_57/' ;
             
         case 3 % mtw
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0058' ;
@@ -135,7 +135,7 @@ for run = 1:3
     % averaging odd and even and scaling into the unit of Hz
     TE = (TEs(3)-TEs(1))/10^3; % effective echo time difference after phase complex fitting in seconds
     FM_mean = (FM_odd.img + FM_even.img)/(2*TE*2*pi) ;
-    centre_and_save_nii(make_nii(FM_mean, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
+    centre_and_save_nii(make_nii(FM_mean, ph_1tp.hdr.dime.pixdim(2:4)), 'FM_mean_romeo.nii' , ph_1tp.hdr.dime.pixdim);
     
     
     %% SEPIA - calculates QSM

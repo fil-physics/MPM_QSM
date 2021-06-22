@@ -34,6 +34,10 @@ delta_TE = 1;	    % echo spacing, in second - we have already combined data, in 
 matrixSize = [364,426,288];	    % image matrix size
 voxelSize = [0.6, 0.6, 0.6];	% spatial resolution of the data, in mm
 
+% select dipole inversion method, either 'star' or 'ndi'
+% 'ndi' may give more contrast but is less robust to noise
+% 'star' is very robust to noise and quick, may have less contrast than ndi
+algorParam.qsm.method = 'star' ;
 
 for run = 1:3
     tic
@@ -43,20 +47,20 @@ for run = 1:3
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054' ;
             ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0055' ;
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/mtw_RR_58_59/' ;
+            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/pdw_RR_58_59/' ;
             
         case 2 % t1w
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0056' ;
             ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0057' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; % echo time in ms
-            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/mtw_RR_58_59/' ;
+            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/t1w_RR_58_59/' ;
             
         case 3 % mtw
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0058' ;
-            ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0058' ;
+            ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0059' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
             output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/mtw_RR_58_59/' ;
-   
+            
     end
     
     
@@ -97,7 +101,7 @@ for run = 1:3
         if run == 3 % mtw has only 4 echoes so complex fit is not possible (minimum 3 echoes)
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else % complex fit
-            compl = single(mag.img).*exp(-1i*ph);
+            compl = single(mag).*exp(-1i*ph);
             [FM, ~, ~, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
             
         end
@@ -117,7 +121,7 @@ for run = 1:3
         mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
         unix(sprintf('%s -m %s -o %s -k nomask -g %s', romeo_command, fullfile(mag_file.folder, mag_file.name), FM_romeo_file, FM_file)) ;
     end
-  
+    
     
     % masking - mask from pdw acquisition is used for all 3 MPM acuisitions
     if run == 1
@@ -162,14 +166,22 @@ for run = 1:3
     
     
     % inputs for dipole inversion
-    
-    algorParam.qsm.method = 'ndi' ;
-    algorParam.qsm.tol = 1 ;
-    algorParam.qsm.maxiter = 200 ;
-    algorParam.qsm.stepSize = 1 ;
+    if strcmp(algorParam.qsm.method , 'ndi')
+        
+        algorParam.qsm.method = 'ndi' ;
+        algorParam.qsm.tol = 1 ;
+        algorParam.qsm.maxiter = 200 ;
+        algorParam.qsm.stepSize = 1 ;
+        
+    elseif strcmp(algorParam.qsm.method , 'star')
+        
+        algorParam.qsm.padsize = ones(1,3)*12 ;
+        
+    end
     
     
     output_basename = fullfile(output_dir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
+    sprintf('run %i preprocessing finished after %s' ,run, secs2hms(toc))
     
     % background field removal
     BackgroundRemovalMacroIOWrapper(input,output_basename,mask_file,algorParam);
@@ -179,5 +191,6 @@ for run = 1:3
     QSMMacroIOWrapper(input,output_basename,mask_file,algorParam);
     
     sprintf('run %i finished after %s' ,run, secs2hms(toc))
-
+    
 end
+exit

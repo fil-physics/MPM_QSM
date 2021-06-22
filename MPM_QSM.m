@@ -119,7 +119,9 @@ for run = 1:3
         [~, FM_name,~] = fileparts(FM_file) ;
         FM_romeo_file = fullfile(output_dir, sprintf('%s_romeo.nii',FM_name)) ;
         mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
-        unix(sprintf('%s -m %s -o %s -k nomask -g %s', romeo_command, fullfile(mag_file.folder, mag_file.name), FM_romeo_file, FM_file)) ;
+        mag_last_tp = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
+        centre_and_save_nii(make_nii(mag_last_tp.img, ph_1tp.hdr.dime.pixdim(2:4)), sprintf('mag_TE%i.nii',size(TEs,2)) , ph_1tp.hdr.dime.pixdim);
+        unix(sprintf('%s -m %s -o %s -k nomask -g %s', romeo_command, sprintf('mag_TE%i.nii',size(TEs,2)) , FM_romeo_file, FM_file)) ;
     end
     
     
@@ -193,4 +195,3 @@ for run = 1:3
     sprintf('run %i finished after %s' ,run, secs2hms(toc))
     
 end
-exit

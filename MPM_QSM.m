@@ -94,7 +94,7 @@ for run = 1:3
     
     for read_dir = 1:2
         
-        if run == 1 % mtw has only 4 echoes so complex fit is not possible (minimum 3 echoes)
+        if run == 3 % mtw has only 4 echoes so complex fit is not possible (minimum 3 echoes)
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else % complex fit
             compl = single(mag.img).*exp(-1i*ph);

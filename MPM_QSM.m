@@ -66,7 +66,7 @@ for run = 1
     
     % path to romeo phase uwnrapping followed by romeo command, i.e.
     % (in linux) /executable/dir/romeo or (in windows) \\executable\dir\romeo
-    romeo_command = '~/Documents/GitHub/MPM_QSM/romeo_linux_3.2.0/bin/romeo' ;
+    romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin' ;
     
     %%%%% END OF USER PARAMETERS %%%%%
     if ~exist(output_dir, 'dir')
@@ -118,16 +118,30 @@ for run = 1
     end
     
     % the echos are evenly spaces so I can simply average these after unwrapping and demeaning
-    FM_odd = load_nii('FM_odd_romeo.nii') ;
-    FM_even = load_nii('FM_even_romeo.nii') ;
+    FM_odd = load_nii('FM_odd.nii') ;
+    FM_even = load_nii('FM_even.nii') ;
     
+    FM(:,:,:,1) = FM_odd.img ;
+    FM(:,:,:,2) = FM_even.img ;
+    
+    FM_file = 'FM.nii' ;
+    centre_and_save_nii(make_nii(FM), FM_file, ph_1tp.hdr.dime.pixdim);
+    
+%                 mag_file = dir(fullfile(mag_dir, 's20*-1.nii'));
+%         mag_first = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
+            mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
+        mag_1tp = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
+%         mag_double(:,:,:,1) = mag_first.img ;
+%         mag_first_last(:,:,:,2) = mag_last.img ;
+        centre_and_save_nii(make_nii(mag_1tp.img), sprintf('mag_TE%i.nii',size(TEs,2)), ph_1tp.hdr.dime.pixdim);
+        
+        
             % phase unwrapping with ROMEO, removing global mean as well
         [~, FM_name,~] = fileparts(FM_file) ;
         FM_romeo_file = fullfile(output_dir, sprintf('%s_romeo.nii',FM_name)) ;
-        mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
-        mag_1tp = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
-        centre_and_save_nii(make_nii(mag_1tp.img), sprintf('mag_TE%i.nii',size(TEs,2)), ph_1tp.hdr.dime.pixdim);
-        unix(sprintf('%s -m %s -o %s -k nomask -g %s', romeo_command, sprintf('mag_TE%i.nii',size(TEs,2)) , FM_romeo_file, FM_file)) ;
+        
+
+        unix(sprintf('%s -p %s -m mag_TE1_TE6.nii -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, FM_romeo_file)) ;
     
     
     % averaging odd and even and scaling into the unit of Hz

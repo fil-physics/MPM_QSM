@@ -127,13 +127,13 @@ for run = 1
     FM_file = 'FM.nii' ;
     centre_and_save_nii(make_nii(FM), FM_file, ph_1tp.hdr.dime.pixdim);
     
-%                 mag_file = dir(fullfile(mag_dir, 's20*-1.nii'));
-%         mag_first = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
+
             mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
-        mag_1tp = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
-%         mag_double(:,:,:,1) = mag_first.img ;
-%         mag_first_last(:,:,:,2) = mag_last.img ;
-        centre_and_save_nii(make_nii(mag_1tp.img), sprintf('mag_TE%i.nii',size(TEs,2)), ph_1tp.hdr.dime.pixdim);
+        mag_last = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
+        mag_double(:,:,:,1) = mag_last.img ;
+        mag_double(:,:,:,2) = mag_last.img ;
+        mag_file = sprintf('mag_TE%i.nii',size(TEs,2)) ;
+        centre_and_save_nii(make_nii(mag_double), mag_file, ph_1tp.hdr.dime.pixdim);
         
         
             % phase unwrapping with ROMEO, removing global mean as well
@@ -141,14 +141,27 @@ for run = 1
         FM_romeo_file = fullfile(output_dir, sprintf('%s_romeo.nii',FM_name)) ;
         
 
-        unix(sprintf('%s -p %s -m mag_TE1_TE6.nii -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, FM_romeo_file)) ;
+        unix(sprintf('%s -p %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_file, FM_romeo_file)) ;
     
     
     % averaging odd and even and scaling into the unit of Hz
-    TE = (TEs(3)-TEs(1))/10^3; % effective echo time difference after phase complex fitting in seconds
-    FM_mean = (FM_odd.img + FM_even.img)/(2*TE*2*pi) ;
-    centre_and_save_nii(make_nii(FM_mean, ph_1tp.hdr.dime.pixdim(2:4)), 'FM_mean_romeo.nii' , ph_1tp.hdr.dime.pixdim);
+    TE = (TEs(3)-TEs(1)); % effective echo time difference after phase complex fitting in seconds
+    FM = load_nii(FM_romeo_file) ;
+    FM_mean = (FM(:,:,:,1) + FM(:,:,:,2))/(2*TE*2*pi) ;
+    centre_and_save_nii(make_nii(FM_mean), 'FM_romeo_mean.nii' , ph_1tp.hdr.dime.pixdim);
     
+    
+    % quality masking
+    qmap = load_nii('quality.nii') ;
+qmap_bin = qmap.img ;
+qmap_bin(qmap.img>0.3) = 1 ;
+qmap_bin(qmap.img<=0.3) = 0 ;
+qmap_bin(isnan(qmap_bin)) = 0 ;
+qmap_bin = imfill(qmap_bin,8,'holes') ;
+qmap_bin_smooth = smoothn(qmap_bin) ;
+qmap_bin_smooth(qmap_bin_smooth>0.6) = 1 ;
+qmap_bin_smooth(qmap_bin_smooth<=0.6) = 0 ;
+centre_and_save_nii(make_nii(qmap_bin_smooth), 'mask.nii', ph_1tp.hdr.dime.pixdim);
     
     %% SEPIA - calculates QSM
     
@@ -165,8 +178,8 @@ for run = 1
     
     % inputs for background field removal
     
-    input(1).name = fullfile(output_dir, 'FM_mean_romeo.nii') ;
-    input(2).name = mask_file ;
+    input(1).name = fullfile(output_dir, 'FM_romeo_mean.nii') ;
+    input(2).name = 'mask.nii' ;
     input(4).name = header_fullfile ;
     
     algorParam.bfr.refine = 0 ;

@@ -39,7 +39,7 @@ voxelSize = [0.6, 0.6, 0.6];	% spatial resolution of the data, in mm
 % 'star' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'star' ;
 
-for run = 1:3
+for run = 1
     tic
     switch run
         
@@ -102,7 +102,7 @@ for run = 1:3
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else % complex fit
             compl = single(mag).*exp(-1i*ph);
-            [FM, ~, ~, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
+%             [FM, dp1, relres, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
             
         end
         
@@ -113,14 +113,19 @@ for run = 1:3
         end
         
         FM_file = fullfile(output_dir, sprintf('FM_%s.nii', flag)) ;
-        centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
+%         centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
+        
+% % %         FM_dp1_file = fullfile(output_dir, sprintf('FM_dp1_%s.nii', flag)) ;
+% % %         centre_and_save_nii(make_nii(dp1, ph_1tp.hdr.dime.pixdim(2:4)), FM_dp1_file , ph_1tp.hdr.dime.pixdim);
+% % %         FM_relres_file = fullfile(output_dir, sprintf('FM_relres_%s.nii', flag)) ;
+% % %         centre_and_save_nii(make_nii(relres, ph_1tp.hdr.dime.pixdim(2:4)), FM_relres_file , ph_1tp.hdr.dime.pixdim);
         
         % phase unwrapping with ROMEO, removing global mean as well
         [~, FM_name,~] = fileparts(FM_file) ;
         FM_romeo_file = fullfile(output_dir, sprintf('%s_romeo.nii',FM_name)) ;
         mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
-        mag_last_tp = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
-        centre_and_save_nii(make_nii(mag_last_tp.img, ph_1tp.hdr.dime.pixdim(2:4)), sprintf('mag_TE%i.nii',size(TEs,2)) , ph_1tp.hdr.dime.pixdim);
+        mag_1tp = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
+        centre_and_save_nii(make_nii(mag_1tp.img), sprintf('mag_TE%i.nii',size(TEs,2)), ph_1tp.hdr.dime.pixdim);
         unix(sprintf('%s -m %s -o %s -k nomask -g %s', romeo_command, sprintf('mag_TE%i.nii',size(TEs,2)) , FM_romeo_file, FM_file)) ;
     end
     

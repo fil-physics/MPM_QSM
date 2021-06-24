@@ -114,21 +114,30 @@ for run = 1
         
         FM_file = fullfile(output_dir, sprintf('FM_%s.nii', flag)) ;
 %         centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
-               
-    end
-    
-    % the echos are evenly spaces so I can simply average these after unwrapping and demeaning
-    FM_odd = load_nii('FM_odd_romeo.nii') ;
-    FM_even = load_nii('FM_even_romeo.nii') ;
-    
-            % phase unwrapping with ROMEO, removing global mean as well
+        
+% % %         FM_dp1_file = fullfile(output_dir, sprintf('FM_dp1_%s.nii', flag)) ;
+% % %         centre_and_save_nii(make_nii(dp1, ph_1tp.hdr.dime.pixdim(2:4)), FM_dp1_file , ph_1tp.hdr.dime.pixdim);
+% % %         FM_relres_file = fullfile(output_dir, sprintf('FM_relres_%s.nii', flag)) ;
+% % %         centre_and_save_nii(make_nii(relres, ph_1tp.hdr.dime.pixdim(2:4)), FM_relres_file , ph_1tp.hdr.dime.pixdim);
+        
+        % phase unwrapping with ROMEO, removing global mean as well
         [~, FM_name,~] = fileparts(FM_file) ;
         FM_romeo_file = fullfile(output_dir, sprintf('%s_romeo.nii',FM_name)) ;
         mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
         mag_1tp = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
         centre_and_save_nii(make_nii(mag_1tp.img), sprintf('mag_TE%i.nii',size(TEs,2)), ph_1tp.hdr.dime.pixdim);
         unix(sprintf('%s -m %s -o %s -k nomask -g %s', romeo_command, sprintf('mag_TE%i.nii',size(TEs,2)) , FM_romeo_file, FM_file)) ;
+    end
     
+    
+    % masking - mask from pdw acquisition is used for all 3 MPM acuisitions
+    if run == 1
+        [mask_file, ~] = mask_spm12_nofsl(mag4mask_file, thresh, fill_holes, conn) ;
+    end
+    
+    % the echos are evenly spaces so I can simply average these after unwrapping and demeaning
+    FM_odd = load_nii('FM_odd_romeo.nii') ;
+    FM_even = load_nii('FM_even_romeo.nii') ;
     
     % averaging odd and even and scaling into the unit of Hz
     TE = (TEs(3)-TEs(1))/10^3; % effective echo time difference after phase complex fitting in seconds

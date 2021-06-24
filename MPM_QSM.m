@@ -162,6 +162,7 @@ qmap_bin_smooth = smoothn(qmap_bin) ;
 qmap_bin_smooth(qmap_bin_smooth>0.6) = 1 ;
 qmap_bin_smooth(qmap_bin_smooth<=0.6) = 0 ;
 centre_and_save_nii(make_nii(qmap_bin_smooth), 'mask.nii', ph_1tp.hdr.dime.pixdim);
+
     
     %% SEPIA - calculates QSM
     

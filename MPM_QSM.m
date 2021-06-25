@@ -2,11 +2,12 @@
 % it uses:
 % 1) complex-fit over echoes for pdw and t1w images
 %    simple phase difference for mtw images
-%    for odd and even echoes separately
+%    for odd and even echoes done separately
 % 2) ROMEO phase unwrapping
-% 3) SPM masking
+% 3) masking based on ROMEO quality map
 % 4) PDF background field removal
-% 5) non-linear dipole inversion
+% 5) star QSM for dpole inversion
+
 % uses SEPIA toolbox
 % Chan, K.-S., Marques, J.P., 2021. SEPIA—Susceptibility mapping pipeline tool for phase images. Neuroimage 227, 117611.
 % script created by Barbara Dymerska 22.06.2021
@@ -16,6 +17,8 @@
 % mag_dir - directory with magnitude niftis, one nifti per echoe
 % ph_dir  - directory with phase niftis, one nifti per echoe
 % mag4mask_file - selected magnitude for masking, usually last echo
+
+
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
 

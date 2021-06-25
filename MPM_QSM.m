@@ -10,7 +10,7 @@
 
 % uses SEPIA toolbox
 % Chan, K.-S., Marques, J.P., 2021. SEPIA—Susceptibility mapping pipeline tool for phase images. Neuroimage 227, 117611.
-% script created by Barbara Dymerska 
+% script created by Barbara Dymerska
 % last modifications 25/06/2021
 % @ UCL FIL Physics
 
@@ -138,7 +138,11 @@ for run = 1:3
     % phase unwrapping with ROMEO + removing global mean value + saving quality map for masking
     [~, FM_name,~] = fileparts(FM_file) ;
     FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
-    unix(sprintf('%s -p %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_file, FM_romeo_file)) ;
+    if isunix
+        unix(sprintf('%s -p %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_file, FM_romeo_file)) ;
+    elseif ispc
+        system(sprintf('%s -p %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_file, FM_romeo_file)) ;
+    end
     
     % averaging odd and even field maps and scaling into Hz
     TE = (TEs(3)-TEs(1)); % effective echo time difference after phase complex fitting in seconds

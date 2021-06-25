@@ -62,3 +62,4 @@ Sphere_mid(shell==1) = shell_val;
 Sphere = Sphere_in+Sphere_mid;    
 Sphere = Sphere/sum(Sphere(:));
 y = fftn(fftshift(Sphere));
+% y =y.*fftshift(fermi(matrix_size, voxel_size, max(matrix_size(:).*voxel_size(:))/2,max(matrix_size(:).*voxel_size(:))/256*10));

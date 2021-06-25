@@ -5,6 +5,35 @@
 % or contact us at qsmreconstruction@gmail.com 
 % Regards, Weill Cornell MRI lab
 
+% Updates for 01/15/2020
+1. Fixed Read_DICOM for Matlab 2019b
+2. Fixed Read_DICOM bug after upgrading Matlab version
+3. Improved support for Philips 3D dicom
+4. Added support for Hitachi dicom
+5. Improved Write_DICOM (including 3D dicom)
+6. Added percetage as option for MEDI_L1 (for edge mask)
+7. Fixed bug in store_QSM_results.m when 'result' exist somewhere else in path
+8. Added MaskErode function
+9. Added fractional_threshold, gradient_threshold, and radiusarg option to BET
+10. Fixed sign bug in fit_IDEAL_R2
+11. Update README.m to reflect currently recommended parameters/functions
+12. Workaround for bug for odd number of slices.
+13. Fixed TE bug in Read_DICOM for Siemens
+
+% Updates for 03/27/2019
+
+1. Added Fit_ppm_complex_bipolar.m for fitting of bipolar readout gradient echo 
+2. Added warnings for DICOM directories that don't have the expected number
+   of images
+3. Added experimental support for reading Philips 3D DICOM
+4. Fixed dicom reading bug for Matlab versions 2018a and newer
+5. Added support for United Health DICOM images
+6. Added fixes for various format with expected fields missing
+7. Added support for Siemens VIDA images
+8. Reduce memory usage for Fit_ppm_complex and Fit_ppm_complex_bipolar for large
+   inputs
+
+
 % Updates for 11/06/2017
 
 1. GUI for MEDI renamed to MEDI_GUI.

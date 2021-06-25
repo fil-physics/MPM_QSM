@@ -1,18 +1,29 @@
-function [water fat freq R2s iter model]= fit_IDEAL_R2(s0, t, f_fat, f0, R2s, max_iter)
+function [water, fat, freq, R2s, iter, model]= fit_IDEAL_R2(s0, t, f_fat, f0, R2s, opts)
 matrix_size = size(s0);
 numvox = prod(matrix_size(1:end-1));
 numte = matrix_size(end);
 
 if nargin<6
-    max_iter = 30;
+   % max_iter = 30;
+   opts=struct;
+   opts.max_iter = 100;
+   opts.lambda_A = 0;
+   opts.lambda_B = 0;
+else
+    if ~isstruct(opts)
+        tmp=opts; opts=struct;
+        opts.max_iter=tmp;
+        opts.lambda_A = 0;
+        opts.lambda_B = 0;
+    end
 end
 if nargin <5
     R2s = zeros([1 numvox]);
 end
-if nargin<4;
+if nargin<4
     f0 = zeros([1 numvox]);
 end
-if nargin<3;
+if nargin<3
     f_fat = -420;
 end
 
@@ -42,13 +53,15 @@ dy = zeros([3 numvox]);
 dy(1,:) = 1e4;
 iter = 0;
 
-y(1,:) = f0+1i*R2s/(2*pi);
+y(1,:) = f0-1i*R2s/(2*pi);
 
 P = exp(-1i*2*pi*repmat(y(1,:),[numte 1]).*t);  %complex phasor
-y(2:3,:) = invA(P.*O, P.*C, s0);
+y(2:3,:) = invA(P.*O, P.*C, s0, opts.lambda_A);
 
 update = dy(1,:);
-while (iter<max_iter)&&(sqrt(sum(real(update).^2,2)/numvox)>0.1)
+%while (iter<opts.max_iter)&&(sqrt(sum(real(update).^2,2)/numvox)>0.1)
+while (iter < opts.max_iter)
+
     sn = P.*O.*repmat(y(2,:),[numte 1]) + P.*C.*repmat(y(3,:),[numte 1]);
     sr = s0 - sn;
 
@@ -56,20 +69,25 @@ while (iter<max_iter)&&(sqrt(sum(real(update).^2,2)/numvox)>0.1)
 %     gi = -2*pi*t.*(repmat(y(2,:),[numte 1]).*O - repmat(y(3,:),[numte 1]).*z + repmat(y(4,:),[numte 1]).*C - repmat(y(5,:),[numte 1]).*d);
 
     Bcol01 = -1i*2*pi*t.*sn;
-    dy = invB(Bcol01, P.*O, P.*C, sr);    
+    dy = invB(Bcol01, P.*O, P.*C, sr, opts.lambda_B);    
     y = y+dy;
     iter = iter+1;
 
-    temp = y(1,:);
-    temp(abs(imag(temp))*2*pi>50)=real(temp(abs(imag(temp))*2*pi>50));
+%     temp = y(1,:);
+%     temp(abs(imag(temp))*2*pi>50)=real(temp(abs(imag(temp))*2*pi>50));
 %     y(1,:) = temp;  hann_low
     
     P = exp(-1i*2*pi*repmat(y(1,:),[numte 1]).*t);  %complex phasor
-    y(2:3,:) = invA(P.*O, P.*C, s0);
+    y(2:3,:) = invA(P.*O, P.*C, s0, opts.lambda_A);
 
+   
+    
     update = dy(1,:);
     update(isnan(update)) = 0;
     update(isinf(update)) = 0;
+%     if nargout>6
+%         S.(sprintf('iter_%d', iter)) = y;
+%     end
 end
 
 freq = reshape(real(y(1,:)),matrix_size(1:end-1));
@@ -111,11 +129,11 @@ model(isnan(model)) = 0;
 % model(isnan(model)) = 0;
 
 
-function x=invA(col1, col2, y)
+function x=invA(col1, col2, y, lambda)
 % assemble A^H*A
-a11 = sum(conj(col1).*col1, 1);
-a12 = sum(conj(col1).*col2, 1);
-a22 = sum(conj(col2).*col2, 1);
+a11 = sum(conj(col1).*col1, 1)+lambda;
+a12 = sum(conj(col1).*col2, 1)+lambda;
+a22 = sum(conj(col2).*col2, 1)+lambda;
 
 % inversion of A^H*A
 d = (a11.*a22 - a12.*conj(a12));
@@ -130,14 +148,14 @@ py2 = sum(conj(col2).*y,1);
 x(1,:) = sum(ia11.*py1 + ia12.*py2, 1);
 x(2,:) = sum(conj(ia12).*py1 + ia22.*py2, 1);
 
-function x=invB(col1, col2, col3, y)
+function x=invB(col1, col2, col3, y, lambda)
 % assemble B^H*B
-b11 = sum(conj(col1).*col1,1);
-b12 = sum(conj(col1).*col2,1);
-b13 = sum(conj(col1).*col3,1);
-b22 = sum(conj(col2).*col2,1);
-b23 = sum(conj(col2).*col3,1);
-b33 = sum(conj(col3).*col3,1);
+b11 = sum(conj(col1).*col1,1)+lambda;
+b12 = sum(conj(col1).*col2,1)+lambda;
+b13 = sum(conj(col1).*col3,1)+lambda;
+b22 = sum(conj(col2).*col2,1)+lambda;
+b23 = sum(conj(col2).*col3,1)+lambda;
+b33 = sum(conj(col3).*col3,1)+lambda;
 
 % inversion of B'*B
 d = (b13.*conj(b12).*conj(b23) + b11.*b22.*b33 + b12.*b23.*conj(b13) - b13.*b22.*conj(b13) - b11.*b23.*conj(b23) - b12.*b33.*conj(b12));

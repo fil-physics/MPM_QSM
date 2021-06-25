@@ -16,7 +16,7 @@
 % mag_dir - directory with magnitude niftis, one nifti per echoe
 % ph_dir  - directory with phase niftis, one nifti per echoe
 % mag4mask_file - selected magnitude for masking, usually last echo
-
+tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
 
 mag4mask_file = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054/s2021-05-24_14-26-153624-00001-01728-6.nii' ;
@@ -39,27 +39,28 @@ voxelSize = [0.6, 0.6, 0.6];	% spatial resolution of the data, in mm
 % 'star' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'star' ;
 
-for run = 1
-    tic
+root_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/';
+for run = 1:3
+    
     switch run
         
         case 1 %pdw
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054' ;
             ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0055' ;
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/pdw_RR_54_55/' ;
+            output_dir = 'pdw_RR_54_55' ;
             
         case 2 % t1w
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0056' ;
             ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0057' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; % echo time in ms
-            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/t1w_RR_56_57/' ;
+            output_dir = 't1w_RR_56_57' ;
             
         case 3 % mtw
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0058' ;
             ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0059' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            output_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/mtw_RR_58_59/' ;
+            output_dir = 'mtw_RR_58_59' ;
             
     end
     
@@ -69,10 +70,11 @@ for run = 1
     romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
     
     %%%%% END OF USER PARAMETERS %%%%%
-    if ~exist(output_dir, 'dir')
-        mkdir(output_dir)
+    output_fulldir = fullfile(root_dir, output_dir) ;
+    if ~exist(output_fulldir, 'dir')
+        mkdir(output_fulldir)
     end
-    cd(output_dir)
+    cd(output_fulldir)
     
     TEs = TEs/10^3 ;
     
@@ -102,7 +104,7 @@ for run = 1
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else % complex fit
             compl = single(mag).*exp(-1i*ph);
-            %             [FM, dp1, relres, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
+                        [FM, dp1, relres, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
             
         end
         
@@ -112,12 +114,12 @@ for run = 1
             flag = 'even' ;
         end
         
-        FM_file = fullfile(output_dir, sprintf('FM_%s.nii', flag)) ;
-        %         centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
+        FM_file = sprintf('FM_%s.nii', flag) ;
+                centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
         
     end
     
-    % the echos are evenly spaces so I can simply average these after unwrapping and demeaning
+    
     FM_odd = load_nii('FM_odd.nii') ;
     FM_even = load_nii('FM_even.nii') ;
     
@@ -136,15 +138,12 @@ for run = 1
     centre_and_save_nii(make_nii(mag_double), mag_file, ph_1tp.hdr.dime.pixdim);
     
     
-    % phase unwrapping with ROMEO, removing global mean as well
+    % phase unwrapping with ROMEO + removing global mean value + saving quality map for masking
     [~, FM_name,~] = fileparts(FM_file) ;
-    FM_romeo_file = fullfile(output_dir, sprintf('%s_romeo.nii',FM_name)) ;
-    
-    
+    FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
     unix(sprintf('%s -p %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_file, FM_romeo_file)) ;
     
-    
-    % averaging odd and even and scaling into the unit of Hz
+    % averaging odd and even field maps and scaling into Hz
     TE = (TEs(3)-TEs(1)); % effective echo time difference after phase complex fitting in seconds
     FM = load_nii(FM_romeo_file) ;
     FM_mean = (FM.img(:,:,:,1) + FM.img(:,:,:,2))/(2*TE*2*pi) ;
@@ -179,7 +178,7 @@ for run = 1
     
     % inputs for background field removal
     
-    input(1).name = fullfile(output_dir, 'FM_romeo_mean.nii') ;
+    input(1).name = 'FM_romeo_mean.nii' ;
     input(2).name = 'mask.nii' ;
     input(4).name = header_fullfile ;
     
@@ -206,16 +205,28 @@ for run = 1
     end
     
     
-    output_basename = fullfile(output_dir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
-    sprintf('run %i preprocessing finished after %s' ,run, secs2hms(toc))
+    output_basename = fullfile(output_fulldir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
+    fprintf('run %i preprocessing finished after %s' ,run, secs2hms(toc))
     
     % background field removal
     BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
     % dipole inversion
-    input(1).name = fullfile(output_dir, sprintf('sepia_%s_%s_local-field.nii.gz', algorParam.bfr.method, algorParam.qsm.method)) ;
+    input(1).name = fullfile(output_fulldir, sprintf('sepia_%s_%s_local-field.nii.gz', algorParam.bfr.method, algorParam.qsm.method)) ;
     QSMMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
     sprintf('run %i finished after %s' ,run, secs2hms(toc))
     
+    QSM = load_nii(fullfile(output_fulldir, sprintf('sepia_%s_%s_QSM.nii.gz', algorParam.bfr.method, algorParam.qsm.method)));
+    QSM_all(:,:,:,run) = QSM.img ;
+    clear QSM
+    
 end
+
+QSM_all_mean = mean(QSM_all, 4) ;
+QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
+centre_and_save_nii(make_nii(QSM_all_mean), fullfile(root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+
+
+sprintf('total processing finished after %s' , secs2hms(toc(tstart)))

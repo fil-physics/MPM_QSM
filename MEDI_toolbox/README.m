@@ -53,12 +53,12 @@
 %%%%%%%%%%%%%%%%%%%%%% NAMING CONVENTION %%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%% NECESSARY FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%
-
-MEDI_set_path();
+% Adjust the following line to where you've copied MEDI_toolbox
+run('PATH\TO\MEDI_toolbox\MEDI_set_path.m');
 
 
 % Use accelerated (for Siemens and GE only) reading of DICOMs
-[iField,voxel_size,matrix_size,CF,delta_TE,TE,B0_dir]=Read_DICOM('DICOM_dir');
+[iField,voxel_size,matrix_size,CF,delta_TE,TE,B0_dir,files]=Read_DICOM('DICOM_dir');
    
     
 % In case of Bruker real/imag data folders:
@@ -78,11 +78,11 @@ MEDI_set_path();
 
 % Estimate the frequency offset in each of the voxel using a complex
 % fitting (even echo spacing)
-[iFreq_raw N_std] = Fit_ppm_complex(iField);
+[iFreq_raw, N_std] = Fit_ppm_complex(iField);
 
 % Estimate the frequency offset in each of the voxel using a complex
 % fitting (uneven echo spacing)
-[iFreq_raw N_std] = Fit_ppm_complex_TE(iField,TE);
+% [iFreq_raw N_std] = Fit_ppm_complex_TE(iField,TE);
 
 % Compute magnitude image
 iMag = sqrt(sum(abs(iField).^2,4));
@@ -130,16 +130,11 @@ save RDF.mat RDF iFreq iFreq_raw iMag N_std Mask matrix_size...
      voxel_size delta_TE CF B0_dir Mask_CSF;
 
 % Morphology enabled dipole inversion with zero reference using CSF (MEDI+0)
-QSM = MEDI_L1('lambda',1000,'lambda_CSF',100);
+QSM = MEDI_L1('lambda',1000,'lambda_CSF',100,'merit','smv',5);
 
-% write QSM as DICOMs
- write_QSM_dir(QSM,'DICOM_dir','QSM_DICOM')
+% export QSM variable as dicom files in the 'QSM' directory
+Write_DICOM(QSM, files, 'QSM')
 
-% Visualize a 3D matrix
- Visu3D( QSM, 'dimension',voxel_size);
-
-% Save results in DICOM format
- write_QSM_dir(QSM, 'DICOM_dir', 'QSM_DICOM');
 
 
 

@@ -531,8 +531,8 @@ namespace NEWIMAGE {
   {
     vector<int> coordinates;
     coordinates.push_back(label%this->xsize());
-    coordinates.push_back( (floor) ( ( label%( this->xsize()*this->ysize() ) ) / this->xsize() ));
-    coordinates.push_back( (floor) ( label / ( this->xsize()*this->ysize() ) ) );
+    coordinates.push_back( (floor) ((double)( ( label%( this->xsize()*this->ysize() ) ) / this->xsize() )));
+    coordinates.push_back( (floor) ((double)( label / ( this->xsize()*this->ysize() ) ) ) );
     return coordinates;
   }
 

@@ -19,11 +19,10 @@
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
 
-mag4mask_file = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054/s2021-05-24_14-26-153624-00001-01728-6.nii' ;
-% masking parameters
-thresh = 0.9 ;
-fill_holes = 'yes' ;
-conn = 8 ;
+% path to romeo phase uwnrapping followed by romeo command, i.e.
+% (in linux) /your_path/bin/romeo or (in windows) \\your_path\bin\romeo
+romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
+
 
 % for SEPIA header
 %BKD: I do complex fit between odd and even echoes separately so the field map has effectively TE difference = TE(3)-TE(1)
@@ -65,9 +64,6 @@ for run = 1:3
     end
     
     
-    % path to romeo phase uwnrapping followed by romeo command, i.e.
-    % (in linux) /executable/dir/romeo or (in windows) \\executable\dir\romeo
-    romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
     
     %%%%% END OF USER PARAMETERS %%%%%
     output_fulldir = fullfile(root_dir, output_dir) ;
@@ -104,7 +100,7 @@ for run = 1:3
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else % complex fit
             compl = single(mag).*exp(-1i*ph);
-                        [FM, dp1, relres, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
+            [FM, dp1, relres, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
             
         end
         
@@ -115,7 +111,7 @@ for run = 1:3
         end
         
         FM_file = sprintf('FM_%s.nii', flag) ;
-                centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
+        centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
         
     end
     
@@ -131,7 +127,7 @@ for run = 1:3
     centre_and_save_nii(make_nii(FM), FM_file, ph_1tp.hdr.dime.pixdim);
     clear FM
     
-    % 
+    %
     mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
     mag_last = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
     mag_double(:,:,:,1) = mag_last.img ;
@@ -151,83 +147,85 @@ for run = 1:3
     FM_mean = (FM.img(:,:,:,1) + FM.img(:,:,:,2))/(2*TE*2*pi) ;
     centre_and_save_nii(make_nii(FM_mean), 'FM_romeo_mean.nii' , ph_1tp.hdr.dime.pixdim);
     
-    
-    % quality masking
-    qmap = load_nii('quality.nii') ;
-    qmap_bin = qmap.img ;
-    qmap_bin(qmap.img>0.3) = 1 ;
-    qmap_bin(qmap.img<=0.3) = 0 ;
-    qmap_bin(isnan(qmap_bin)) = 0 ;
-    qmap_bin = imfill(qmap_bin,8,'holes') ;
-    qmap_bin_smooth = smoothn(qmap_bin) ;
-    qmap_bin_smooth(qmap_bin_smooth>0.6) = 1 ;
-    qmap_bin_smooth(qmap_bin_smooth<=0.6) = 0 ;
-    centre_and_save_nii(make_nii(qmap_bin_smooth), 'mask.nii', ph_1tp.hdr.dime.pixdim);
-    
-    
-    %% SEPIA - calculates QSM
-    
-    % create SEPIA header
-    header_fullfile = fullfile(ph_dir, 'header_sepia.mat') ;
-    save(header_fullfile, 'B0', 'B0_dir', 'CF', 'TE', 'delta_TE', 'matrixSize', 'voxelSize')
-    
-    % general SEPIA parameters
-    sepia_addpath
-    algorParam.general.isBET = 0 ;
-    algorParam.general.isInvert = 1 ;
-    algorParam.general.isGPU = 0 ;
-    
-    
-    % inputs for background field removal
-    input(1).name = 'FM_romeo_mean.nii' ;
-    input(2).name = 'mask.nii' ;
-    input(4).name = header_fullfile ;
-    
-    algorParam.bfr.refine = 0 ;
-    algorParam.bfr.erode_radius = 0 ;
-    algorParam.bfr.method = 'pdf' ;
-    algorParam.bfr.tol = 0.1 ;
-    algorParam.bfr.iteration = 50 ;
-    algorParam.bfr.padSize = 40 ;
-    
-    
-    % inputs for dipole inversion
-    if strcmp(algorParam.qsm.method , 'ndi')
+    if run == 1
+        % quality masking
+        qmap = load_nii('quality.nii') ;
+        qmap_bin = qmap.img ;
+        qmap_bin(qmap.img>0.3) = 1 ;
+        qmap_bin(qmap.img<=0.3) = 0 ;
+        qmap_bin(isnan(qmap_bin)) = 0 ;
+        qmap_bin = imfill(qmap_bin,8,'holes') ;
+        qmask = smoothn(qmap_bin) ;
+        qmask(qmask>0.6) = 1 ;
+        qmask(qmask<=0.6) = 0 ;
+        qmask_file = fullfile(output_fulldir, 'mask.nii') ;
+        centre_and_save_nii(make_nii(qmask), qmask_file , ph_1tp.hdr.dime.pixdim);
+    else
         
-        algorParam.qsm.method = 'ndi' ;
-        algorParam.qsm.tol = 1 ;
-        algorParam.qsm.maxiter = 200 ;
-        algorParam.qsm.stepSize = 1 ;
         
-    elseif strcmp(algorParam.qsm.method , 'star')
+        %% SEPIA - calculates QSM
         
-        algorParam.qsm.padsize = ones(1,3)*12 ;
+        % create SEPIA header
+        header_fullfile = fullfile(ph_dir, 'header_sepia.mat') ;
+        save(header_fullfile, 'B0', 'B0_dir', 'CF', 'TE', 'delta_TE', 'matrixSize', 'voxelSize')
+        
+        % general SEPIA parameters
+        sepia_addpath
+        algorParam.general.isBET = 0 ;
+        algorParam.general.isInvert = 1 ;
+        algorParam.general.isGPU = 0 ;
+        
+        
+        % inputs for background field removal
+        input(1).name = 'FM_romeo_mean.nii' ;
+        input(2).name = 'mask.nii' ;
+        input(4).name = header_fullfile ;
+        
+        algorParam.bfr.refine = 0 ;
+        algorParam.bfr.erode_radius = 0 ;
+        algorParam.bfr.method = 'pdf' ;
+        algorParam.bfr.tol = 0.1 ;
+        algorParam.bfr.iteration = 50 ;
+        algorParam.bfr.padSize = 40 ;
+        
+        
+        % inputs for dipole inversion
+        if strcmp(algorParam.qsm.method , 'ndi')
+            
+            algorParam.qsm.method = 'ndi' ;
+            algorParam.qsm.tol = 1 ;
+            algorParam.qsm.maxiter = 200 ;
+            algorParam.qsm.stepSize = 1 ;
+            
+        elseif strcmp(algorParam.qsm.method , 'star')
+            
+            algorParam.qsm.padsize = ones(1,3)*12 ;
+            
+        end
+        
+        
+        output_basename = fullfile(output_fulldir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
+        fprintf('run %i preprocessing finished after %s' ,run, secs2hms(toc))
+        
+        % background field removal
+        BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
+        
+        % dipole inversion
+        input(1).name = fullfile(output_fulldir, sprintf('sepia_%s_%s_local-field.nii.gz', algorParam.bfr.method, algorParam.qsm.method)) ;
+        QSMMacroIOWrapper(input,output_basename,input(2).name,algorParam);
+        
+        sprintf('run %i finished after %s' ,run, secs2hms(toc))
+        
+        QSM = load_nii(fullfile(output_fulldir, sprintf('sepia_%s_%s_QSM.nii.gz', algorParam.bfr.method, algorParam.qsm.method)));
+        QSM_all(:,:,:,run) = QSM.img ;
+        clear QSM
         
     end
     
+    QSM_all_mean = mean(QSM_all, 4) ;
+    QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
+    centre_and_save_nii(make_nii(QSM_all_mean), fullfile(root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
+    centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
     
-    output_basename = fullfile(output_fulldir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
-    fprintf('run %i preprocessing finished after %s' ,run, secs2hms(toc))
     
-    % background field removal
-    BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
-    
-    % dipole inversion
-    input(1).name = fullfile(output_fulldir, sprintf('sepia_%s_%s_local-field.nii.gz', algorParam.bfr.method, algorParam.qsm.method)) ;
-    QSMMacroIOWrapper(input,output_basename,input(2).name,algorParam);
-    
-    sprintf('run %i finished after %s' ,run, secs2hms(toc))
-    
-    QSM = load_nii(fullfile(output_fulldir, sprintf('sepia_%s_%s_QSM.nii.gz', algorParam.bfr.method, algorParam.qsm.method)));
-    QSM_all(:,:,:,run) = QSM.img ;
-    clear QSM
-    
-end
-
-QSM_all_mean = mean(QSM_all, 4) ;
-QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
-centre_and_save_nii(make_nii(QSM_all_mean), fullfile(root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
-
-
-sprintf('total processing finished after %s' , secs2hms(toc(tstart)))
+    sprintf('total processing finished after %s' , secs2hms(toc(tstart)))

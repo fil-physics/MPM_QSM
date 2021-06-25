@@ -3,6 +3,7 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 
 
 
+
 Installation steps:
 
 1. Download Zip with all the files from:
@@ -49,3 +50,4 @@ Liu, Tian, et al. "A novel background field removal method for MRI using project
 
 5. starQSM:
 Wei, Hongjiang, et al. "Streaking artifact reduction for quantitative susceptibility mapping of sources with large dynamic range." NMR in Biomedicine 28.10 (2015): 1294-1303.
+

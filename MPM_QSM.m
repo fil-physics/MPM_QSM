@@ -120,6 +120,7 @@ for run = 1:3
     end
     
     
+    % saving odd and even echoes as one file for ROMEO unwrapping
     FM_odd = load_nii('FM_odd.nii') ;
     FM_even = load_nii('FM_even.nii') ;
     
@@ -130,6 +131,7 @@ for run = 1:3
     centre_and_save_nii(make_nii(FM), FM_file, ph_1tp.hdr.dime.pixdim);
     clear FM
     
+    % 
     mag_file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', size(TEs,2))));
     mag_last = load_untouch_nii(fullfile(mag_file.folder, mag_file.name)) ;
     mag_double(:,:,:,1) = mag_last.img ;
@@ -177,7 +179,6 @@ for run = 1:3
     
     
     % inputs for background field removal
-    
     input(1).name = 'FM_romeo_mean.nii' ;
     input(2).name = 'mask.nii' ;
     input(4).name = header_fullfile ;

@@ -210,11 +210,11 @@ for run = 1
     sprintf('run %i preprocessing finished after %s' ,run, secs2hms(toc))
     
     % background field removal
-    BackgroundRemovalMacroIOWrapper(input,output_basename,mask_file,algorParam);
+    BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
     % dipole inversion
     input(1).name = fullfile(output_dir, sprintf('sepia_%s_%s_local-field.nii.gz', algorParam.bfr.method, algorParam.qsm.method)) ;
-    QSMMacroIOWrapper(input,output_basename,mask_file,algorParam);
+    QSMMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
     sprintf('run %i finished after %s' ,run, secs2hms(toc))
     

@@ -10,25 +10,20 @@
 
 % uses SEPIA toolbox
 % Chan, K.-S., Marques, J.P., 2021. SEPIA—Susceptibility mapping pipeline tool for phase images. Neuroimage 227, 117611.
-% script created by Barbara Dymerska 22.06.2021
+% script created by Barbara Dymerska 
+% last modifications 25/06/2021
 % @ UCL FIL Physics
-%
-% input variables:
-% mag_dir - directory with magnitude niftis, one nifti per echoe
-% ph_dir  - directory with phase niftis, one nifti per echoe
-% mag4mask_file - selected magnitude for masking, usually last echo
 
 
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
 
 % path to romeo phase uwnrapping followed by romeo command, i.e.
-% (in linux) /your_path/bin/romeo or (in windows) \\your_path\bin\romeo
+% (in linux) '/your_path/bin/romeo' or (in windows) 'D:\your_path\bin\romeo'
 romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
 
 
 % for SEPIA header
-%BKD: I do complex fit between odd and even echoes separately so the field map has effectively TE difference = TE(3)-TE(1)
 B0 = 7;			    % magnetic field strength, in Tesla
 B0_dir = [0;1;0];	% main magnetic field direction, [x,y,z]
 CF = 7*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
@@ -41,16 +36,17 @@ voxelSize = [0.6, 0.6, 0.6];	% spatial resolution of the data, in mm
 % 'star' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'star' ;
 
+% root_dir - where the data will be saved:
 root_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/';
 for run = 1:3
     
     switch run
         
         case 1 %pdw
-            mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054' ;
-            ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0055' ;
+            mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054' ; % folder with magnitude niftis
+            ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0055' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_54_55' ;
+            output_dir = 'pdw_RR_54_55' ; % output directory for a specific submeasurement from MPM
             
         case 2 % t1w
             mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0056' ;

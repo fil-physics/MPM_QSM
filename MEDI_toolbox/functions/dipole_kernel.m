@@ -60,7 +60,7 @@ elseif strcmp(domain,'imagespace')
     d = (3*( X*B0_dir(1) + Y*B0_dir(2) + Z*B0_dir(3)).^2 - X.^2-Y.^2-Z.^2)./(4*pi*(X.^2+Y.^2+Z.^2).^2.5);
 
     d(isnan(d)) = 0;
-    D = d ;fftn(fftshift(d));
+    D = fftn(fftshift(d));
 end
 
 

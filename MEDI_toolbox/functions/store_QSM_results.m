@@ -6,15 +6,16 @@
 %   Last modified by Tian Liu on 2013.07.24
 
 
-function store_QSM_results(varargin )
+function resultsfile = store_QSM_results(varargin )
 [QSM, summary, iMag, RDF, Mask] = parse_input(varargin{:});
 
-if exist('results','dir') == 0
+if exist(fullfile('.','results'),'dir') == 0
     mkdir results;
 end
 
 fileno=getnextfileno('results/','x','.mat');
-save(strcat('results/x',sprintf('%08u',fileno), '.mat'), 'QSM', 'summary','iMag','RDF','Mask');
+resultsfile=strcat('results/x',sprintf('%08u',fileno), '.mat');
+save(resultsfile, 'QSM', 'summary','iMag','RDF','Mask');
 end
 
 function [QSM, summary, iMag, RDF, Mask] = parse_input(varargin)

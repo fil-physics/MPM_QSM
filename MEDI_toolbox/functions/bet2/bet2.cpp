@@ -797,8 +797,8 @@ int bet(float *inputimage, int* outputmask, const int* imgdim, const float *voxe
 
 void mexFunction( int nlhs, mxArray      *plhs[],
 		          int nrhs, const mxArray *prhs[]) {
-    if (nrhs != 3) {
-    mexErrMsgTxt("MEX requires 3 inputs."); }
+    if ((nrhs < 3)||(nrhs>6)) {
+    mexErrMsgTxt("MEX requires between 3 and 6 inputs."); }
     
     //int N1, N2, N3, peel, depth;
     //int *mask, *m_size, n;
@@ -826,6 +826,34 @@ mexPrintf("%g %g %g\n",v_size[0],v_size[1],v_size[2]);
 mexPrintf("%d \n",n);
 mexEvalString("drawnow;");
 
+    double *dtmp;
+    char ctmp[64];
+    if (nrhs > 3) {
+        dtmp = mxGetPr(prhs[3]);
+        if (0<=*dtmp) {
+            sprintf(ctmp, "%f", *dtmp);
+            fractional_threshold.set_value(string(ctmp));
+        }
+        mexPrintf("fractional_threshold set to %f\n", fractional_threshold.value());
+    }
+    if (nrhs > 4) {
+        dtmp = mxGetPr(prhs[4]);
+        if (0<=*dtmp) {
+            sprintf(ctmp, "%f", *dtmp);
+            gradient_threshold.set_value(string(ctmp));
+        }            
+        mexPrintf("gradient_threshold set to %f\n", gradient_threshold.value());
+    }
+    if (nrhs > 5) {
+        dtmp = mxGetPr(prhs[5]);
+        if (0<=*dtmp) {
+            sprintf(ctmp, "%f", *dtmp);
+            radiusarg.set_value(string(ctmp));
+            
+        }
+        mexPrintf("radiusarg set to %f\n", radiusarg.value());
+    }
+    mexEvalString("drawnow;");
     float *fM = new float [n]();
     int *Mask = new int [n]();
     p = mxGetPr(prhs[0]);

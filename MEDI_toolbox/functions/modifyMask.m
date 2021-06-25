@@ -30,9 +30,9 @@ sx = std(gx(:));
 sy = std(gy(:));
 sz = std(gz(:));
 
-avg_gx = mean(gx(:))
-avg_gy = mean(gy(:))
-avg_gz = mean(gz(:))
+avg_gx = mean(gx(:));
+avg_gy = mean(gy(:));
+avg_gz = mean(gz(:));
 
 m = (abs(gx-avg_gx)<sx*n) .* (abs(gy-avg_gy)<sy*n) .* (abs(gz-avg_gz)<sz*n);
 

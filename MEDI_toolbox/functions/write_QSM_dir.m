@@ -1,7 +1,7 @@
 %   Last modified by Alexey Dimov on 2016.05.13
 
 function y = write_QSM_dir(QSM,dicomDir,saveDir)
-warning( 'off', 'all' );
+%warning( 'off', 'all' );
 
 % if ~exist('qsm_DICOM','dir')
 %     mkdir('qsm_DICOM')

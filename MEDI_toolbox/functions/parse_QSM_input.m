@@ -3,7 +3,9 @@
 %   Modified by Tian Liu and Shuai Wang on 2011.03.15
 %   Last modified by Tian Liu on 2013.07.24
 
-function [lam iFreq RDF N_std iMag Mask matrix_size matrix_size0 voxel_size delta_TE CF B0_dir merit smv radius data_weighting gradient_weighting Debug_Mode, lam_CSF, Mask_CSF] = parse_QSM_input(varargin)
+function [lam, iFreq, RDF, N_std, iMag, Mask, matrix_size, matrix_size0, voxel_size, ...
+    delta_TE, CF, B0_dir, merit, smv, radius, data_weighting, gradient_weighting, ... 
+    Debug_Mode, lam_CSF, Mask_CSF, solver, percentage] = parse_QSM_input(varargin)
 
 merit = 0;
 smv = 0;
@@ -14,10 +16,11 @@ gradient_weighting = 1;
 pad = 0;
 matrix_size0 = 0;
 Debug_Mode = 'NoDebug';
+solver='gaussnewton';
 % CSF regularization
 lam_CSF = 100;
-
 filename = ['RDF.mat'];
+percentage = 0.9;
 if size(varargin,2)>0
     for k=1:size(varargin,2)
         if strcmpi(varargin{k},'filename')
@@ -47,7 +50,13 @@ if size(varargin,2)>0
         end
         if strcmpi(varargin{k},'lambda_CSF')
             lam_CSF = varargin{k+1};
-        end        
+        end
+        if strcmpi(varargin{k},'solver')
+            solver=varargin{k+1};
+        end
+        if strcmpi(varargin{k},'percentage')
+            percentage = varargin{k+1};
+        end
     end
 end
 

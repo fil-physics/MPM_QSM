@@ -145,9 +145,9 @@ for run = 1:3
     [~, FM_name,~] = fileparts(FM_file) ;
     FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
     if isunix
-        unix(sprintf('%s -p %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_file, FM_romeo_file)) ;
+        unix(sprintf('%s %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_fullfile, FM_romeo_file)) ;
     elseif ispc
-        system(sprintf('%s -p %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_file, FM_romeo_file)) ;
+        system(sprintf('%s %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_fullfile, FM_romeo_file)) ;
     end
     
     % averaging odd and even field maps and scaling into Hz

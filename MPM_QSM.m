@@ -206,7 +206,7 @@ for run = 1:3
         algorParam.qsm.maxiter = 200 ;
         algorParam.qsm.stepSize = 1 ;
         
-    elseif strcmp(algorParam.qsm.method , 'star')
+    elseif strcmp(algorParam.qsm.method , 'Star-QSM')
         
         algorParam.qsm.padsize = ones(1,3)*12 ;
         

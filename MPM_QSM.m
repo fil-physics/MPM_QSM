@@ -187,7 +187,7 @@ for run = 1:3
     
     % inputs for background field removal
     input(1).name = 'FM_romeo_mean.nii' ;
-    input(2).name = 'mask.nii' ;
+    input(2).name = qmask_file ;
     input(4).name = header_fullfile ;
     
     algorParam.bfr.refine = 0 ;

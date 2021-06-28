@@ -73,14 +73,17 @@ for run = 1:3
     
     TEs = TEs/10^3 ;
     
+    ph_files = dir(ph_dir);
+    mag_files = dir(mag_dir);
+    
     for t = 1:size(TEs,2)
-        file = dir(fullfile(ph_dir, sprintf('s20*-%i.nii', t)) );
-        ph_1tp = load_untouch_nii(fullfile(ph_dir, file.name));
+        
+        ph_1tp = load_untouch_nii(fullfile(ph_dir, ph_files(t+2).name));
         ph(:,:,:,t) = ph_1tp.img ;
         
         if run ~= 3 % for mtw (run = 3) acquisition we cannot perform complex fit so we don't need magnitude data for each TE
-            file = dir(fullfile(mag_dir, sprintf('s20*-%i.nii', t)) );
-            mag_1tp = load_untouch_nii(fullfile(mag_dir, file.name)) ;
+            
+            mag_1tp = load_untouch_nii(fullfile(mag_dir, mag_files(t+2).name)) ;
             mag(:,:,:,t) = mag_1tp.img ;
             
         end

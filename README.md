@@ -43,7 +43,7 @@ Chan, K.-S., Marques, J.P., 2021. SEPIA—Susceptibility mapping pipeline tool f
 Liu, Tian, et al. "Nonlinear formulation of the magnetic field to source relationship for robust quantitative susceptibility mapping." Magnetic resonance in medicine 69.2 (2013): 467-476.
 
 3. ROMEO phase uwnrapping:
-Dymerska, Barbara, and Ekcstein, Korbinian et al. "Phase unwrapping with a rapid opensource minimum spanning tree algorithm (ROMEO)." Magnetic Resonance in Medicine (2020).
+Dymerska, Barbara, and Eckstein, Korbinian et al. "Phase unwrapping with a rapid opensource minimum spanning tree algorithm (ROMEO)." Magnetic Resonance in Medicine (2020).
 
 4. PDF background field removal:
 Liu, Tian, et al. "A novel background field removal method for MRI using projection onto dipole fields." NMR in Biomedicine 24.9 (2011): 1129-1136.

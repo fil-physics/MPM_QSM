@@ -34,7 +34,7 @@ voxelSize = [0.6, 0.6, 0.6];	% spatial resolution of the data, in mm
 % select dipole inversion method, either 'star' or 'ndi'
 % 'ndi' may give more contrast but is less robust to noise
 % 'star' is very robust to noise and quick, may have less contrast than ndi
-algorParam.qsm.method = 'star' ;
+algorParam.qsm.method = 'star-qsm' ;
 
 % root_dir - where the data will be saved:
 root_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/';
@@ -175,7 +175,7 @@ for run = 1:3
     %% SEPIA - calculates QSM
     
     % create SEPIA header
-    header_fullfile = fullfile(ph_dir, 'header_sepia.mat') ;
+    header_fullfile = fullfile(output_fulldir, 'header_sepia.mat') ;
     save(header_fullfile, 'B0', 'B0_dir', 'CF', 'TE', 'delta_TE', 'matrixSize', 'voxelSize')
     
     % general SEPIA parameters
@@ -214,7 +214,6 @@ for run = 1:3
     
     
     output_basename = fullfile(output_fulldir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
-    fprintf('run %i preprocessing finished after %s' ,run, secs2hms(toc))
     
     % background field removal
     BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);

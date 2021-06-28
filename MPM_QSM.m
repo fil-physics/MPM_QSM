@@ -34,7 +34,7 @@ voxelSize = [0.6, 0.6, 0.6];	% spatial resolution of the data, in mm
 % select dipole inversion method, either 'star' or 'ndi'
 % 'ndi' may give more contrast but is less robust to noise
 % 'star' is very robust to noise and quick, may have less contrast than ndi
-algorParam.qsm.method = 'star-qsm' ;
+algorParam.qsm.method = 'Star-QSM' ;
 
 % root_dir - where the data will be saved:
 root_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/';

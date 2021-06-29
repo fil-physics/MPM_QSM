@@ -25,7 +25,7 @@ romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
 
 % for SEPIA header
 B0 = 7;			    % magnetic field strength, in Tesla
-B0_dir = [0;1;0];	% main magnetic field direction, [x,y,z]
+B0_dir = [0;1;0];	% main magnetic field direction, [RE, PE, slice/PE2]
 CF = 7*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
 delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
 matrixSize = [364,426,288];	    % image matrix size
@@ -96,8 +96,8 @@ for run = 1:3
     
     clear ph_1tp.img mag_1tp
     
-    % rescaling phase into [0,pi] phase range
-    ph = 2*pi*single(ph)/4095 ;
+    % rescaling phase into [0,2*pi] phase range
+    ph = 2*pi*single(ph - min(vector(ph)))/(max(vector(ph))-min(vector(ph))) ;
     
     for read_dir = 1:2
         
@@ -163,7 +163,8 @@ for run = 1:3
         qmap_bin(qmap.img>0.3) = 1 ;
         qmap_bin(qmap.img<=0.3) = 0 ;
         qmap_bin(isnan(qmap_bin)) = 0 ;
-        qmap_bin = imfill(qmap_bin,8,'holes') ;
+        qmap_bin = imfill(qmap_bin,6,'holes') ;
+%         qmap_bin = imfill(qmap_bin,8,'holes') ; % maybe add as an user option?
         qmask = smoothn(qmap_bin) ;
         qmask(qmask>0.6) = 1 ;
         qmask(qmask<=0.6) = 0 ;

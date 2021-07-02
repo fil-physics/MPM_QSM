@@ -107,12 +107,15 @@ for run = 1:3
     for read_dir = 1:2
         
         if run == 3 % mtw has only 4 echoes so complex fit is not possible (minimum 3 echoes)
+            disp('calculating phase difference')
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
-        else % complex fit
+        else
+            disp('complex fitting phase')
             compl = single(mag).*exp(-1i*ph);
             [FM, dp1, relres, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
-            
+            clear mag
         end
+        clear ph
         
         if read_dir == 1
             flag = 'odd' ;
@@ -158,16 +161,15 @@ for run = 1:3
     TE = (TEs(3)-TEs(1)); % effective echo time difference after phase complex fitting in seconds
     FM = load_nii(FM_romeo_file) ;
     FM_mean = (FM.img(:,:,:,1) + FM.img(:,:,:,2))/(2*TE*2*pi) ;
+    clear FM
     FM_mean_nii = ph_1tp ;
     FM_mean_nii.img = FM_mean ;
     FM_mean_nii.hdr.dime.bitpix = 32 ;
     FM_mean_nii.hdr.dime.datatype = 16 ;
     save_untouch_nii(FM_mean_nii, 'FM_romeo_mean.nii');
     reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4))
-    
-    %%%%%%%%% here reslice_nii for FM_romeo_mean and quality mask
-    
-   
+    clear FM_mean_nii
+
         disp('quality masking')
         qmap = load_nii('quality.nii') ;
         qmap_bin = qmap.img ;
@@ -175,7 +177,7 @@ for run = 1:3
         qmap_bin(qmap.img<=0.3) = 0 ;
         qmap_bin(isnan(qmap_bin)) = 0 ;
         qmap_bin = imfill(qmap_bin,6,'holes') ;
-%         qmap_bin = imfill(qmap_bin,8,'holes') ; % maybe add as an user option?
+%         qmap_bin = imfill(qmap_bin,8,'holes') ; % maybe add connectivity as an user option?
         qmask = smoothn(qmap_bin) ;
         qmask(qmask>0.6) = 1 ;
         qmask(qmask<=0.6) = 0 ;
@@ -198,14 +200,11 @@ for run = 1:3
     
     % general SEPIA parameters
     sepia_addpath
-    
-    
-    
+
     algorParam.general.isBET = 0 ;
     algorParam.general.isInvert = 1 ;
     algorParam.general.isGPU = 0 ;
-    
-    
+   
     % inputs for background field removal
     input(1).name = 'FM_romeo_mean_rot.nii' ;
     input(2).name = 'mask_rot.nii' ;
@@ -236,10 +235,10 @@ for run = 1:3
     
     output_basename = fullfile(output_fulldir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
     
-    % background field removal
+    disp('background field removal')
     BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
-    % dipole inversion
+    disp('dipole inversion')
     input(1).name = fullfile(output_fulldir, sprintf('sepia_%s_%s_local-field.nii.gz', algorParam.bfr.method, algorParam.qsm.method)) ;
     QSMMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
@@ -260,9 +259,9 @@ for run = 1:3
 
     QSM_invrot_file = sprintf('sepia_%s_%s_QSM_invrot.nii.gz', algorParam.bfr.method, algorParam.qsm.method) ;
     save_nii(make_nii(QSM_invrot), QSM_invrot_file)
- 
+
     QSM_all(:,:,:,run) = QSM.img ;
-    clear QSM
+    clear QSM QSM_invrot
     
 end
 

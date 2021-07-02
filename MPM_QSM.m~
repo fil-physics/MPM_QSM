@@ -33,11 +33,14 @@ B0_dir = [0;0;1];	% main magnetic field direction, [RE, PE, slice/PE2] --> BKD: 
 % 'star' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'Star-QSM' ;
 
+% specify the angle of "slice rotation" (around 3rd dimention) in deg
+alpha = 30 ;
+
 % root directory to nifti files
 in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/M700153_analysis/MORSE_Opt_phase/' ;
 % the data will be saved:
 out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/M700153_analysis/MORSE_Opt_phase/SEPIA/';
-for run = 1
+for run = 2:3
     
     switch run
         
@@ -134,7 +137,6 @@ for run = 1
     centre_and_save_nii(make_nii(FM), FM_file, ph_1tp.hdr.dime.pixdim);
     clear FM
     
-    %
     mag_fullfile = fullfile(mag_fulldir, mag_file);
     mag_last = load_untouch_nii(mag_fullfile) ;
     mag_double(:,:,:,1) = mag_last.img ;
@@ -143,7 +145,7 @@ for run = 1
     centre_and_save_nii(make_nii(mag_double), mag_fullfile, ph_1tp.hdr.dime.pixdim);
     
     
-    % phase unwrapping with ROMEO + removing global mean value + saving quality map for masking
+    disp('phase unwrapping with ROMEO + removing global mean value + saving quality map for masking')
     [~, FM_name,~] = fileparts(FM_file) ;
     FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
     if isunix
@@ -152,7 +154,7 @@ for run = 1
         system(sprintf('%s %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_fullfile, FM_romeo_file)) ;
     end
     
-    % averaging odd and even field maps and scaling into Hz
+    disp('averaging odd and even field maps and scaling into Hz')
     TE = (TEs(3)-TEs(1)); % effective echo time difference after phase complex fitting in seconds
     FM = load_nii(FM_romeo_file) ;
     FM_mean = (FM.img(:,:,:,1) + FM.img(:,:,:,2))/(2*TE*2*pi) ;
@@ -165,9 +167,8 @@ for run = 1
     
     %%%%%%%%% here reslice_nii for FM_romeo_mean and quality mask
     
-    
-    if run == 1
-        % quality masking
+   
+        disp('quality masking')
         qmap = load_nii('quality.nii') ;
         qmap_bin = qmap.img ;
         qmap_bin(qmap.img>0.3) = 1 ;
@@ -183,8 +184,6 @@ for run = 1
         qmask_file = fullfile(output_fulldir, 'mask.nii') ;
         save_untouch_nii(qmask_nii, qmask_file);
         reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4))
-    end
-    
     
     %% SEPIA - calculates QSM
     
@@ -248,34 +247,20 @@ for run = 1
     
     QSM = load_nii(fullfile(output_fulldir, sprintf('sepia_%s_%s_QSM.nii.gz', algorParam.bfr.method, algorParam.qsm.method)));
     
-   % creating inverse affine matrix for rotation back to the initial image
-   % space
-% % %     M_aff(1,:) = ph_1tp.hdr.hist.srow_x ;
-% % %     M_aff(2,:) = ph_1tp.hdr.hist.srow_y ;
-% % %     M_aff(3,:) = ph_1tp.hdr.hist.srow_z ;
-% % %     M_aff(4,:) = [ 0 0 0 1] ;
-% % %     
-% % %     M_inv = eye(4,4) + -1*(1-eye(4,4)) ;
-% % %     M_aff_inv = M_aff.*M_inv ;
-    
-% % %     QSM.hdr.hist.srow_x = M_aff_inv(1,:) ;
-% % %     QSM.hdr.hist.srow_y = M_aff_inv(2,:) ;
-% % %     QSM.hdr.hist.srow_z = M_aff_inv(3,:) ;
-    QSM_invrot = flipdim(permute(QSM.img, [2 3 1]),1);
-M_aff(1,:) = [0.8660    -0.5000         0         0] ;
-    M_aff(2,:) = [0.5000    0.8660         0         0];
-    M_aff(3,:) = [     0         0    1.0000         0];
+   disp('rotation of QSM back to the original image space')
+    QSM_invrot = flip(permute(QSM.img, [2 3 1]),1);
+   
+    M_aff(1,:) = [cos(deg2rad(alpha))    -0.5000     0       0];
+    M_aff(2,:) = [0.5000    0.8660      0       0];
+    M_aff(3,:) = [0         0    1.0000         0];
     M_aff(4,:) = [0         0         0    1.0000];
-[QSM_invrot new_M] = affine(QSM_invrot, M_aff, ph_1tp.hdr.dime.pixdim(2:4));
-% % %     QSM.hdr.hist.srow_x = ph_1tp.hdr.hist.srow_x ;
-% % %     QSM.hdr.hist.srow_y = ph_1tp.hdr.hist.srow_y ;
-% % %     QSM.hdr.hist.srow_z = ph_1tp.hdr.hist.srow_z ;
-[Mx_big, My_big, Mz_big] = size(QSM_invrot) ;
+    
+    [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
+    QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
+
     QSM_invrot_file = sprintf('sepia_%s_%s_QSM_invrot.nii.gz', algorParam.bfr.method, algorParam.qsm.method) ;
     save_nii(make_nii(QSM_invrot), QSM_invrot_file)
-    reslice_inv_nii(QSM_invrot_file, 'test.nii', ph_1tp.hdr.dime.pixdim(2:4))
-    
-    
+ 
     QSM_all(:,:,:,run) = QSM.img ;
     clear QSM
     

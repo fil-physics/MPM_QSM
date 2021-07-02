@@ -25,40 +25,39 @@ romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
 
 % for SEPIA header
 B0 = 7;			    % magnetic field strength, in Tesla
-B0_dir = [0;1;0];	% main magnetic field direction, [RE, PE, slice/PE2]
-CF = 7*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
-delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
-matrixSize = [364,426,288];	    % image matrix size
-voxelSize = [0.6, 0.6, 0.6];	% spatial resolution of the data, in mm
+B0_dir = [0;0;1];	% main magnetic field direction, [RE, PE, slice/PE2] --> BKD: I rotate images so that B0 is in 3rd dim
+
 
 % select dipole inversion method, either 'star' or 'ndi'
 % 'ndi' may give more contrast but is less robust to noise
 % 'star' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'Star-QSM' ;
 
-% root_dir - where the data will be saved:
-root_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/SEPIA/';
-for run = 1:3
+% root directory to nifti files
+in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/M700153_analysis/MORSE_Opt_phase/' ;
+% the data will be saved:
+out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/M700153_analysis/MORSE_Opt_phase/SEPIA/';
+for run = 1
     
     switch run
         
         case 1 %pdw
-            mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0054' ; % folder with magnitude niftis
-            ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/pdw_mfc_3dflash_v1k_RR_0055' ; % folder with phase inftis
+            mag_dir = 'pdw_mfc_3dflash_v1k_RR_0054' ; % folder with magnitude niftis
+            ph_dir = 'pdw_mfc_3dflash_v1k_RR_0055' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_54_55' ; % output directory for a specific submeasurement from MPM
+            output_dir = 'pdw_RR_54_55_rot' ; % output directory for a specific submeasurement from MPM
             mag_file = 's2021-05-24_14-26-153624-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
-            mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0056' ;
-            ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/t1w_mfc_3dflash_v1k_RR_0057' ;
+            mag_dir = 't1w_mfc_3dflash_v1k_RR_0056' ;
+            ph_dir = 't1w_mfc_3dflash_v1k_RR_0057' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; % echo time in ms
             output_dir = 't1w_RR_56_57' ;
             mag_file = 's2021-05-24_14-26-152627-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 3 % mtw
-            mag_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0058' ;
-            ph_dir = '/media/barbara/hdd2/DATA/FIL/MORSE_Opt_phase/mtw_mfc_3dflash_v1k_180deg_RR_0059' ;
+            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0058' ;
+            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0059' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
             output_dir = 'mtw_RR_58_59' ;
             mag_file = 's2021-05-24_14-26-155501-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
@@ -68,7 +67,10 @@ for run = 1:3
     
     
     %%%%% END OF USER PARAMETERS %%%%%
-    output_fulldir = fullfile(root_dir, output_dir) ;
+    mag_fulldir = fullfile(in_root_dir, mag_dir) ;
+    ph_fulldir = fullfile(in_root_dir, ph_dir) ;
+    
+    output_fulldir = fullfile(out_root_dir, output_dir) ;
     if ~exist(output_fulldir, 'dir')
         mkdir(output_fulldir)
     end
@@ -76,17 +78,17 @@ for run = 1:3
     
     TEs = TEs/10^3 ;
     
-    ph_files = dir(ph_dir);
-    mag_files = dir(mag_dir);
+    ph_files = dir(ph_fulldir);
+    mag_files = dir(mag_fulldir);
     
     for t = 1:size(TEs,2)
-        reslice_nii(
-        ph_1tp = load_untouch_nii(fullfile(ph_dir, ph_files(t+2).name));
+        
+        ph_1tp = load_untouch_nii(fullfile(ph_fulldir, ph_files(t+2).name));
         ph(:,:,:,t) = ph_1tp.img ;
         
         if run ~= 3 % for mtw (run = 3) acquisition we cannot perform complex fit so we don't need magnitude data for each TE
             
-            mag_1tp = load_untouch_nii(fullfile(mag_dir, mag_files(t+2).name)) ;
+            mag_1tp = load_untouch_nii(fullfile(mag_fulldir, mag_files(t+2).name)) ;
             mag(:,:,:,t) = mag_1tp.img ;
             
         end
@@ -97,7 +99,7 @@ for run = 1:3
     clear ph_1tp.img mag_1tp
     
     % rescaling phase into [0,2*pi] phase range
-    ph = 2*pi*single(ph - min(vector(ph)))/(max(vector(ph))-min(vector(ph))) ;
+    ph = 2*pi*single(ph - min(vector(ph)))/single(max(vector(ph))-min(vector(ph))) ;
     
     for read_dir = 1:2
         
@@ -133,7 +135,7 @@ for run = 1:3
     clear FM
     
     %
-    mag_fullfile = fullfile(mag_dir, mag_file);
+    mag_fullfile = fullfile(mag_fulldir, mag_file);
     mag_last = load_untouch_nii(mag_fullfile) ;
     mag_double(:,:,:,1) = mag_last.img ;
     mag_double(:,:,:,2) = mag_last.img ;
@@ -154,7 +156,15 @@ for run = 1:3
     TE = (TEs(3)-TEs(1)); % effective echo time difference after phase complex fitting in seconds
     FM = load_nii(FM_romeo_file) ;
     FM_mean = (FM.img(:,:,:,1) + FM.img(:,:,:,2))/(2*TE*2*pi) ;
-    centre_and_save_nii(make_nii(FM_mean), 'FM_romeo_mean.nii' , ph_1tp.hdr.dime.pixdim);
+    FM_mean_nii = ph_1tp ;
+    FM_mean_nii.img = FM_mean ;
+    FM_mean_nii.hdr.dime.bitpix = 32 ;
+    FM_mean_nii.hdr.dime.datatype = 16 ;
+    save_untouch_nii(FM_mean_nii, 'FM_romeo_mean.nii');
+    reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4))
+    
+    %%%%%%%%% here reslice_nii for FM_romeo_mean and quality mask
+    
     
     if run == 1
         % quality masking
@@ -168,27 +178,38 @@ for run = 1:3
         qmask = smoothn(qmap_bin) ;
         qmask(qmask>0.6) = 1 ;
         qmask(qmask<=0.6) = 0 ;
+        qmask_nii = ph_1tp ;
+        qmask_nii.img = qmask ;
         qmask_file = fullfile(output_fulldir, 'mask.nii') ;
-        centre_and_save_nii(make_nii(qmask), qmask_file , ph_1tp.hdr.dime.pixdim);
+        save_untouch_nii(qmask_nii, qmask_file);
+        reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4))
     end
     
     
     %% SEPIA - calculates QSM
     
     % create SEPIA header
+    CF = B0*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
+    delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
+    hdr = load_nii_hdr('FM_romeo_mean_rot.nii') ;
+    matrixSize = hdr.dime.dim(2:4) ;	    % image matrix size
+    voxelSize = ph_1tp.hdr.dime.pixdim(2:4) ;	% spatial resolution of the data, in mm
     header_fullfile = fullfile(output_fulldir, 'header_sepia.mat') ;
     save(header_fullfile, 'B0', 'B0_dir', 'CF', 'TE', 'delta_TE', 'matrixSize', 'voxelSize')
     
     % general SEPIA parameters
     sepia_addpath
+    
+    
+    
     algorParam.general.isBET = 0 ;
     algorParam.general.isInvert = 1 ;
     algorParam.general.isGPU = 0 ;
     
     
     % inputs for background field removal
-    input(1).name = 'FM_romeo_mean.nii' ;
-    input(2).name = qmask_file ;
+    input(1).name = 'FM_romeo_mean_rot.nii' ;
+    input(2).name = 'mask_rot.nii' ;
     input(4).name = header_fullfile ;
     
     algorParam.bfr.refine = 0 ;
@@ -226,6 +247,35 @@ for run = 1:3
     sprintf('run %i finished after %s' ,run, secs2hms(toc))
     
     QSM = load_nii(fullfile(output_fulldir, sprintf('sepia_%s_%s_QSM.nii.gz', algorParam.bfr.method, algorParam.qsm.method)));
+    
+   % creating inverse affine matrix for rotation back to the initial image
+   % space
+% % %     M_aff(1,:) = ph_1tp.hdr.hist.srow_x ;
+% % %     M_aff(2,:) = ph_1tp.hdr.hist.srow_y ;
+% % %     M_aff(3,:) = ph_1tp.hdr.hist.srow_z ;
+% % %     M_aff(4,:) = [ 0 0 0 1] ;
+% % %     
+% % %     M_inv = eye(4,4) + -1*(1-eye(4,4)) ;
+% % %     M_aff_inv = M_aff.*M_inv ;
+    
+% % %     QSM.hdr.hist.srow_x = M_aff_inv(1,:) ;
+% % %     QSM.hdr.hist.srow_y = M_aff_inv(2,:) ;
+% % %     QSM.hdr.hist.srow_z = M_aff_inv(3,:) ;
+    QSM_invrot = flipdim(permute(QSM.img, [2 3 1]),1);
+M_aff(1,:) = [0.8660    -0.5000         0         0] ;
+    M_aff(2,:) = [0.5000    0.8660         0         0];
+    M_aff(3,:) = [     0         0    1.0000         0];
+    M_aff(4,:) = [0         0         0    1.0000];
+[QSM_invrot new_M] = affine(QSM_invrot, M_aff, ph_1tp.hdr.dime.pixdim(2:4));
+% % %     QSM.hdr.hist.srow_x = ph_1tp.hdr.hist.srow_x ;
+% % %     QSM.hdr.hist.srow_y = ph_1tp.hdr.hist.srow_y ;
+% % %     QSM.hdr.hist.srow_z = ph_1tp.hdr.hist.srow_z ;
+[Mx_big, My_big, Mz_big] = size(QSM_invrot) ;
+    QSM_invrot_file = sprintf('sepia_%s_%s_QSM_invrot.nii.gz', algorParam.bfr.method, algorParam.qsm.method) ;
+    save_nii(make_nii(QSM_invrot), QSM_invrot_file)
+    reslice_inv_nii(QSM_invrot_file, 'test.nii', ph_1tp.hdr.dime.pixdim(2:4))
+    
+    
     QSM_all(:,:,:,run) = QSM.img ;
     clear QSM
     
@@ -233,8 +283,8 @@ end
 
 QSM_all_mean = mean(QSM_all, 4) ;
 QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
-centre_and_save_nii(make_nii(QSM_all_mean), fullfile(root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
 
 
 sprintf('total processing finished after %s' , secs2hms(toc(tstart)))

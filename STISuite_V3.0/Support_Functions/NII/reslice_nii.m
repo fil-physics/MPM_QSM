@@ -57,11 +57,9 @@
 %  
 %  - Jimmy Shen (jimmy@rotman-baycrest.on.ca)
 %
-function nii=reslice_nii(old_fn, voxel_size, verbose, bg, method, img_idx, preferredForm)
+function reslice_nii(old_fn, new_fn, voxel_size, verbose, bg, method, img_idx, preferredForm)
 
-    
-
-   if ~exist('old_fn','var') 
+   if ~exist('old_fn','var') | ~exist('new_fn','var')
       error('Usage: reslice_nii(old_fn, new_fn, [voxel_size], [verbose], [bg], [method], [img_idx])');
    end
 
@@ -80,17 +78,10 @@ function nii=reslice_nii(old_fn, voxel_size, verbose, bg, method, img_idx, prefe
    if ~exist('preferredForm','var') | isempty(preferredForm)
       preferredForm= 's';				% Jeff
    end
-   
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % preferredForm= 'q';				% Jeff
-   
-   
 
    nii = load_nii_no_xform(old_fn, img_idx, 0, preferredForm);
-   
 
-
-if ~ismember(nii.hdr.dime.datatype, [2,4,8,16,64,256,512,768])
+   if ~ismember(nii.hdr.dime.datatype, [2,4,8,16,64,256,512,768])
       error('Transform of this NIFTI data is not supported by the program.');
    end
 
@@ -105,11 +96,8 @@ if ~ismember(nii.hdr.dime.datatype, [2,4,8,16,64,256,512,768])
    end
 
    old_M = nii.hdr.hist.old_affine;
-   
-
 
    if nii.hdr.dime.dim(5) > 1
-      
       for i = 1:nii.hdr.dime.dim(5)
          if verbose
             fprintf('Reslicing %d of %d volumes.\n', i, nii.hdr.dime.dim(5));
@@ -137,7 +125,7 @@ if ~ismember(nii.hdr.dime.datatype, [2,4,8,16,64,256,512,768])
    nii.hdr.hist.srow_z = M(3,:);
    nii.hdr.hist.new_affine = M;
 
-   %save_nii(nii, new_fn);
+   save_nii(nii, new_fn);
 
    return;					% reslice_nii
 
@@ -269,8 +257,4 @@ function [nii] = load_nii_no_xform(filename, img_idx, old_RGB, preferredForm)
       nii.hdr.hist.old_affine = M;
    end
 
-   
-   
-   
    return					% load_nii_no_xform
-

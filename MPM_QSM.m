@@ -1,17 +1,18 @@
 % MPM QSM pipeline
-% it uses:
+% main steps:
 % 1) complex-fit over echoes for pdw and t1w images
 %    simple phase difference for mtw images
 %    for odd and even echoes done separately
 % 2) ROMEO phase unwrapping
 % 3) masking based on ROMEO quality map
-% 4) PDF background field removal
-% 5) star QSM for dpole inversion
+% 4) rotation to scanner space
+% 5) PDF background field removal
+% 6) star QSM for dpole inversion
 
 % uses SEPIA toolbox
 % Chan, K.-S., Marques, J.P., 2021. SEPIA—Susceptibility mapping pipeline tool for phase images. Neuroimage 227, 117611.
 % script created by Barbara Dymerska
-% last modifications 25/06/2021
+% last modifications 05/07/2021
 % @ UCL FIL Physics
 
 
@@ -263,14 +264,22 @@ for run = 1:3
     save_nii(make_nii(QSM_invrot), QSM_invrot_file)
 
     QSM_all(:,:,:,run) = QSM.img ;
+    QSM_all_invrot(:,:,:,run) = QSM_invrot ;
     clear QSM QSM_invrot
     
 end
 
 QSM_all_mean = mean(QSM_all, 4) ;
 QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
+
+QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
+QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
+
 centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
 centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+
+centre_and_save_nii(make_nii(QSM_all_invrot_mean), fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(make_nii(QSM_pdw_t1w_invrot_mean), fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
 
 
 sprintf('total processing finished after %s' , secs2hms(toc(tstart)))

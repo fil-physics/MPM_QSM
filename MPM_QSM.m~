@@ -164,6 +164,10 @@ for run = 1:3
     FM_mean_nii.hdr.hist = ph_1tp.hdr.hist ;
     save_nii(FM_mean_nii, 'FM_romeo_mean.nii');
     reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
+    FM_mean_nii = load_nii('FM_romeo_mean_rot.nii') ;
+    qmask_cropped = changeImageSize(FM_mean_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+        save_nii(make_nii(qmask_cropped), qmask_file);
+    
     
     clear FM_mean_nii
 
@@ -187,7 +191,9 @@ for run = 1:3
         qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
         qmask_nii = load_nii(qmask_file) ;
         qmask_nii.img = round(qmask_nii.img) ;
-        save_nii(qmask_nii, qmask_file);
+        
+        qmask_cropped = changeImageSize(qmask_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+        save_nii(make_nii(qmask_cropped), qmask_file);
         
     
     %% SEPIA - calculates QSM
@@ -272,10 +278,14 @@ end
 QSM_all_mean = mean(QSM_all, 4) ;
 QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
 
-
+QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
+QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
 
 centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
 centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+
+centre_and_save_nii(make_nii(QSM_all_invrot_mean), fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(make_nii(QSM_pdw_t1w_invrot_mean), fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
 
 
 sprintf('total processing finished after %s' , secs2hms(toc(tstart)))

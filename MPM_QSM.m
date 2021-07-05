@@ -164,8 +164,12 @@ for run = 1:3
     FM_mean_nii.hdr.hist = ph_1tp.hdr.hist ;
     save_nii(FM_mean_nii, 'FM_romeo_mean.nii');
     reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
+    FM_mean_nii = load_nii('FM_romeo_mean_rot.nii') ;
+    FM_mean_nii.img = changeImageSize(FM_mean_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+    centre_and_save_nii(make_nii(FM_mean_nii.img), 'FM_romeo_mean_rot.nii', ph_1tp.hdr.dime.pixdim);
     
-    clear FM_mean_nii
+    
+    clear FM_mean_nii FM_cropped
 
         disp('quality masking')
         qmap = load_nii('quality.nii') ;
@@ -187,7 +191,9 @@ for run = 1:3
         qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
         qmask_nii = load_nii(qmask_file) ;
         qmask_nii.img = round(qmask_nii.img) ;
-        save_nii(qmask_nii, qmask_file);
+        
+        qmask_nii.img = changeImageSize(qmask_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+        centre_and_save_nii(make_nii(qmask_nii.img), qmask_file, ph_1tp.hdr.dime.pixdim);
         
     
     %% SEPIA - calculates QSM

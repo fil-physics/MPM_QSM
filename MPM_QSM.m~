@@ -41,7 +41,7 @@ alpha = 30 ;
 in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
 % the data will be saved:
 out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/';
-for run = 1
+for run = 1:3
         switch run
         case 1 %pdw
             mag_dir = 'pdw_mfc_3dflash_v1k_RR_0036' ; % folder with magnitude niftis
@@ -159,11 +159,9 @@ for run = 1
     FM = load_nii(FM_romeo_file) ;
     FM_mean = (FM.img(:,:,:,1) + FM.img(:,:,:,2))/(2*TE*2*pi) ;
     clear FM
-    FM_mean_nii = ph_1tp ;
-    FM_mean_nii.img = FM_mean ;
-    FM_mean_nii.hdr.dime.bitpix = 32 ;
-    FM_mean_nii.hdr.dime.datatype = 16 ;
-    save_untouch_nii(FM_mean_nii, 'FM_romeo_mean.nii');
+    FM_mean_nii= make_nii(FM_mean) ;
+    FM_mean_nii.hdr.hist = ph_1tp.hdr.hist ;
+    save_nii(FM_mean_nii, 'FM_romeo_mean.nii');
     reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
     
     clear FM_mean_nii
@@ -180,14 +178,18 @@ for run = 1
         qmask(qmask>0.6) = 1 ;
         qmask(qmask<=0.6) = 0 ;
 
-        
-        qmask_nii = make_nii(qmask) ;
-        hdr = load_nii_hdr(fullfile(ph_fulldir, ph_files(end).name)) ;
-        qmask_nii.hdr.hist = hdr;
-
+        qmask_nii = make_nii(int16(qmask)) ;
+        qmask_nii.hdr.hist = ph_1tp.hdr.hist ;
         qmask_file = fullfile(output_fulldir, 'mask.nii') ;
         save_nii(qmask_nii, qmask_file);
         reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4), 1 , 0)
+        qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
+        qmask_nii = load_nii(qmask_file) ;
+        qmask_nii.img = round(qmask_nii.img) ;
+        save_nii(qmask_nii, qmask_file);
+        
+        
+        
     
     %% SEPIA - calculates QSM
     

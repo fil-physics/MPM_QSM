@@ -161,7 +161,7 @@ for run = 1:3
     clear FM
     FM_mean_nii= make_nii(FM_mean) ;
     FM_mean_nii.hdr.hist = ph_1tp.hdr.hist ;
-    save_untouch_nii(FM_mean_nii, 'FM_romeo_mean.nii');
+    save_nii(FM_mean_nii, 'FM_romeo_mean.nii');
     reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
     
     clear FM_mean_nii
@@ -178,11 +178,16 @@ for run = 1:3
         qmask(qmask>0.6) = 1 ;
         qmask(qmask<=0.6) = 0 ;
 
-        qmask_nii = make_nii(qmask) ;
+        qmask_nii = make_nii(int16(qmask)) ;
         qmask_nii.hdr.hist = ph_1tp.hdr.hist ;
         qmask_file = fullfile(output_fulldir, 'mask.nii') ;
         save_nii(qmask_nii, qmask_file);
         reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4), 1 , 0)
+        qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
+        qmask_nii = load_nii(qmask_file) ;
+        qmask_nii.img = round(qmask_nii.img) ;
+        save_nii(qmask_nii, qmask_file);
+        
     
     %% SEPIA - calculates QSM
     

@@ -184,7 +184,7 @@ for run = 1:3
     % create SEPIA header
     CF = B0*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
     delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
-    B0_dir = [0;0;1];	% main magnetic field direction, it's always [0,0,1] because I rotate the images so that 3rd dimention is aligned with B0
+    B0_dir = [0;0;1];	% main magnetic field direction, it's always [0,0,1] because the images are resliced so that 3rd dimention is aligned with B0
     hdr = load_nii_hdr('FM_romeo_mean_rot.nii') ;
     matrixSize = hdr.dime.dim(2:4) ;	    % image matrix size
     voxelSize = ph_1tp.hdr.dime.pixdim(2:4) ;	% spatial resolution of the data, in mm
@@ -199,7 +199,7 @@ for run = 1:3
     algorParam.general.isGPU = 0 ;
     
     % inputs for background field removal
-    input(1).name = 'FM_romeo_mean_rot.nii' ;
+    input(1).name = 'B0_rot.nii' ;
     input(2).name = 'mask_rot.nii' ;
     input(4).name = header_fullfile ;
     

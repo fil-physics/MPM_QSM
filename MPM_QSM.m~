@@ -23,50 +23,53 @@ tstart = tic ;
 % (in linux) '/your_path/bin/romeo' or (in windows) 'D:\your_path\bin\romeo'
 romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
 
-
 % for SEPIA header
 B0 = 7;			    % magnetic field strength, in Tesla
-B0_dir = [0;0;1];	% main magnetic field direction, [RE, PE, slice/PE2] --> BKD: I rotate images so that B0 is in 3rd dim
-
 
 % select dipole inversion method, either 'star' or 'ndi'
 % 'ndi' may give more contrast but is less robust to noise
-% 'star' is very robust to noise and quick, may have less contrast than ndi
+% 'Star-QSM' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'Star-QSM' ;
 
 % specify the angle of "slice rotation" (around 3rd dimention) in deg
 alpha = 30 ;
 
 
-% root directory to nifti files
+% root directory to nifti files:
 in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
-% the data will be saved:
-out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/';
+% the data will be saved in:
+out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan2';
+
+% directories, parameters and files specific to given contrast:
 for run = 1:3
+    
         switch run
         case 1 %pdw
-            mag_dir = 'pdw_mfc_3dflash_v1k_RR_0036' ; % folder with magnitude niftis
-            ph_dir = 'pdw_mfc_3dflash_v1k_RR_0037' ; % folder with phase inftis
+            mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; % folder with magnitude niftis
+            ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_36_37' ; % output directory for a specific submeasurement from MPM
-            mag_file = 's2021-06-23_10-18-103458-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'pdw_RR_25_26' ; % output directory for a specific submeasurement from MPM
+            mag_file = 's2021-06-23_10-18-112654-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
-            mag_dir = 't1w_mfc_3dflash_v1k_RR_0034' ;
-            ph_dir = 't1w_mfc_3dflash_v1k_RR_0035' ;
+            mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
+            ph_dir = 't1w_mfc_3dflash_v1k_0023' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; % echo time in ms
-            output_dir = 't1w_RR_34_35' ;
-            mag_file = 's2021-06-23_10-18-102444-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 't1w_RR_22_23' ;
+            mag_file = 's2021-06-23_10-18-111631-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 3 % mtw
-            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0038' ;
-            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0039' ;
+            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0031' ;
+            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0032' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            output_dir = 'mtw_RR_38_39' ;
-            mag_file = 's2021-06-23_10-18-105228-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'mtw_RR_31_32' ;
+	    mag_file = 's2021-06-23_10-18-114211-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+
         end
 
 
+   
+    
     
     %%%%% END OF USER PARAMETERS %%%%%
     mag_fulldir = fullfile(in_root_dir, mag_dir) ;
@@ -88,7 +91,7 @@ for run = 1:3
         ph_1tp = load_untouch_nii(fullfile(ph_fulldir, ph_files(t+2).name));
         ph(:,:,:,t) = ph_1tp.img ;
         
-        if run ~= 3 % for mtw (run = 3) acquisition we cannot perform complex fit so we don't need magnitude data for each TE
+        if size(TEs,2) >= 6 % for mtw acquisition we cannot perform complex fit so we don't need magnitude data for each TE
             
             mag_1tp = load_untouch_nii(fullfile(mag_fulldir, mag_files(t+2).name)) ;
             mag(:,:,:,t) = mag_1tp.img ;
@@ -105,7 +108,7 @@ for run = 1:3
     
     for read_dir = 1:2
         
-        if run == 3 % mtw has only 4 echoes so complex fit is not possible (minimum 3 echoes)
+        if size(TEs,2) < 6 % mtw has only 4 echoes so complex fit is not possible (minimum 3 echoes)
             disp('calculating phase difference')
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else
@@ -165,42 +168,43 @@ for run = 1:3
     save_nii(FM_mean_nii, 'FM_romeo_mean.nii');
     reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
     FM_mean_nii = load_nii('FM_romeo_mean_rot.nii') ;
-    qmask_cropped = changeImageSize(FM_mean_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
-        save_nii(make_nii(qmask_cropped), qmask_file);
+    FM_mean_nii.img = changeImageSize(FM_mean_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+    centre_and_save_nii(make_nii(FM_mean_nii.img), 'FM_romeo_mean_rot.nii', ph_1tp.hdr.dime.pixdim);
     
     
-    clear FM_mean_nii
-
-        disp('quality masking')
-        qmap = load_nii('quality.nii') ;
-        qmap_bin = qmap.img ;
-        qmap_bin(qmap.img>0.3) = 1 ;
-        qmap_bin(qmap.img<=0.3) = 0 ;
-        qmap_bin(isnan(qmap_bin)) = 0 ;
-        qmap_bin = imfill(qmap_bin,6,'holes') ;
-%         qmap_bin = imfill(qmap_bin,8,'holes') ; % maybe add connectivity as an user option?
-        qmask = smoothn(qmap_bin) ;
-        qmask(qmask>0.6) = 1 ;
-        qmask(qmask<=0.6) = 0 ;
-
-        qmask_nii = make_nii(int16(qmask)) ;
-        qmask_nii.hdr.hist = ph_1tp.hdr.hist ;
-        qmask_file = fullfile(output_fulldir, 'mask.nii') ;
-        save_nii(qmask_nii, qmask_file);
-        reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4), 1 , 0)
-        qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
-        qmask_nii = load_nii(qmask_file) ;
-        qmask_nii.img = round(qmask_nii.img) ;
-        
-        qmask_cropped = changeImageSize(qmask_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
-        save_nii(make_nii(qmask_cropped), qmask_file);
-        
+    clear FM_mean_nii FM_cropped
+    
+    disp('quality masking')
+    qmap = load_nii('quality.nii') ;
+    qmap_bin = qmap.img ;
+    qmap_bin(qmap.img>0.3) = 1 ;
+    qmap_bin(qmap.img<=0.3) = 0 ;
+    qmap_bin(isnan(qmap_bin)) = 0 ;
+    qmap_bin = imfill(qmap_bin,6,'holes') ;
+    %         qmap_bin = imfill(qmap_bin,8,'holes') ; % maybe add connectivity as an user option?
+    qmask = smoothn(qmap_bin) ;
+    qmask(qmask>0.6) = 1 ;
+    qmask(qmask<=0.6) = 0 ;
+    
+    qmask_nii = make_nii(int16(qmask)) ;
+    qmask_nii.hdr.hist = ph_1tp.hdr.hist ;
+    qmask_file = fullfile(output_fulldir, 'mask.nii') ;
+    save_nii(qmask_nii, qmask_file);
+    reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4), 1 , 0)
+    qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
+    qmask_nii = load_nii(qmask_file) ;
+    qmask_nii.img = round(qmask_nii.img) ;
+    
+    qmask_nii.img = changeImageSize(qmask_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+    centre_and_save_nii(make_nii(qmask_nii.img), qmask_file, ph_1tp.hdr.dime.pixdim);
+    
     
     %% SEPIA - calculates QSM
     
     % create SEPIA header
     CF = B0*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
     delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
+    B0_dir = [0;0;1];	% main magnetic field direction, it's always [0,0,1] because I rotate the images so that 3rd dimention is aligned with B0
     hdr = load_nii_hdr('FM_romeo_mean_rot.nii') ;
     matrixSize = hdr.dime.dim(2:4) ;	    % image matrix size
     voxelSize = ph_1tp.hdr.dime.pixdim(2:4) ;	% spatial resolution of the data, in mm
@@ -209,11 +213,11 @@ for run = 1:3
     
     % general SEPIA parameters
     sepia_addpath
-
+    
     algorParam.general.isBET = 0 ;
     algorParam.general.isInvert = 1 ;
     algorParam.general.isGPU = 0 ;
-   
+    
     % inputs for background field removal
     input(1).name = 'FM_romeo_mean_rot.nii' ;
     input(2).name = 'mask_rot.nii' ;
@@ -242,7 +246,7 @@ for run = 1:3
     end
     
     
-    output_basename = fullfile(output_fulldir, sprintf('sepia_%s_%s', algorParam.bfr.method, algorParam.qsm.method)) ;
+    output_basename = fullfile(output_fulldir, '', algorParam.bfr.method, algorParam.qsm.method)) ;
     
     disp('background field removal')
     BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
@@ -255,9 +259,9 @@ for run = 1:3
     
     QSM = load_nii(fullfile(output_fulldir, sprintf('sepia_%s_%s_QSM.nii.gz', algorParam.bfr.method, algorParam.qsm.method)));
     
-   disp('rotation of QSM back to the original image space')
+    disp('rotation of QSM back to the original image space')
     QSM_invrot = flip(permute(QSM.img, [2 3 1]),1);
-   
+    
     M_aff(1,:) = [cos(deg2rad(alpha))    -sin(deg2rad(alpha))     0        0    ];
     M_aff(2,:) = [sin(deg2rad(alpha))    cos(deg2rad(alpha))      0        0    ];
     M_aff(3,:) = [0                      0                        1.0000   0    ];
@@ -265,10 +269,10 @@ for run = 1:3
     
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
-
+    
     QSM_invrot_file = sprintf('sepia_%s_%s_QSM_invrot.nii.gz', algorParam.bfr.method, algorParam.qsm.method) ;
     save_nii(make_nii(QSM_invrot), QSM_invrot_file)
-
+    
     QSM_all(:,:,:,run) = QSM.img ;
     QSM_all_invrot(:,:,:,run) = QSM_invrot ;
     clear QSM QSM_invrot

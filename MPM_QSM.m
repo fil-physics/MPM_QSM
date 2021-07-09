@@ -153,28 +153,30 @@ for run = 1:3
     
     
     disp('quality masking')
-    qmap = load_nii('quality.nii') ;
+    qmap = load_untouch_nii('quality.nii') ;
     qmap_bin = qmap.img ;
     qmap_bin(qmap.img>0.3) = 1 ;
     qmap_bin(qmap.img<=0.3) = 0 ;
+    clear qmap
     qmap_bin(isnan(qmap_bin)) = 0 ;
     qmap_bin = imfill(qmap_bin,6,'holes') ;
-    %         qmap_bin = imfill(qmap_bin,8,'holes') ; % maybe add connectivity as an user option?
-    qmask = smoothn(qmap_bin) ;
+    qmask = smooth3(qmap_bin, 'gaussian') ;
     qmask(qmask>0.6) = 1 ;
     qmask(qmask<=0.6) = 0 ;
+    clear qmap_bin
     
-    qmask_nii = make_nii(int16(qmask)) ;
-    qmask_nii.hdr.hist = ph_1tp.hdr.hist ;
+    qmask = make_nii(int16(qmask)) ;
+    qmask.hdr.hist = ph_1tp.hdr.hist ;
     qmask_file = fullfile(output_fulldir, 'mask.nii') ;
-    save_nii(qmask_nii, qmask_file);
+    save_nii(qmask, qmask_file);
     reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4), 1 , 0)
     qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
-    qmask_nii = load_nii(qmask_file) ;
-    qmask_nii.img = round(qmask_nii.img) ;
+    qmask = load_nii(qmask_file) ;
+    qmask.img = round(qmask.img) ;
     
-    qmask_nii.img = changeImageSize(qmask_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
-    centre_and_save_nii(make_nii(qmask_nii.img), qmask_file, ph_1tp.hdr.dime.pixdim);
+    qmask.img = changeImageSize(qmask.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+    qmask.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
+    centre_and_save_nii(qmask, qmask_file, ph_1tp.hdr.dime.pixdim);
     
     
     %% SEPIA - calculates QSM

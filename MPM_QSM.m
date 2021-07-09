@@ -21,17 +21,14 @@ tstart = tic ;
 
 % path to romeo phase uwnrapping followed by romeo command, i.e.
 % (in linux) '/your_path/bin/romeo' or (in windows) 'D:\your_path\bin\romeo'
-romeo_command = 'C:\wtcnapps\romeo_win_3.1.4\bin\romeo' ;
-
+romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
 
 % for SEPIA header
 B0 = 7;			    % magnetic field strength, in Tesla
-B0_dir = [0;0;1];	% main magnetic field direction, [RE, PE, slice/PE2] --> BKD: I rotate images so that B0 is in 3rd dim
-
 
 % select dipole inversion method, either 'star' or 'ndi'
 % 'ndi' may give more contrast but is less robust to noise
-% 'star' is very robust to noise and quick, may have less contrast than ndi
+% 'Star-QSM' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'Star-QSM' ;
 
 % specify the angle of "slice rotation" (around 3rd dimention) in deg
@@ -39,33 +36,37 @@ alpha = 30 ;
 
 
 % root directory to nifti files
-in_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis' ;
+in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
 % the data will be saved:
-out_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis';
+out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan2';
 for run = 1:3
-    switch run
+    
+        switch run
         case 1 %pdw
-            mag_dir = '59' ; % folder with magnitude niftis
-            ph_dir = '60' ; % folder with phase inftis
+            mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; % folder with magnitude niftis
+            ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_59_60_rot' ; % output directory for a specific submeasurement from MPM
-            mag_file = 's2021-05-24_14-26-153624-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'pdw_RR_25_26' ; % output directory for a specific submeasurement from MPM
+            mag_file = 's2021-06-23_10-18-112654-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
-            mag_dir = '57' ;
-            ph_dir = '58' ;
+            mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
+            ph_dir = 't1w_mfc_3dflash_v1k_0023' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; % echo time in ms
-            output_dir = 't1w_RR_57_58_rot' ;
-            mag_file = 'sM700159-0057-00001-001728-06-001.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 't1w_RR_22_23' ;
+            mag_file = 's2021-06-23_10-18-111631-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 3 % mtw
-            mag_dir = '58' ;
-            ph_dir = '59' ;
+            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0031' ;
+            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0032' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            output_dir = 'mtw_RR_58_59_rot' ;
-            mag_file = 's2021-05-24_14-26-155501-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
-    end
-    
+            output_dir = 'mtw_RR_31_32' ;
+	    mag_file = 's2021-06-23_10-18-114211-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+
+        end
+
+
+   
     
     
     %%%%% END OF USER PARAMETERS %%%%%
@@ -201,6 +202,7 @@ for run = 1:3
     % create SEPIA header
     CF = B0*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
     delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
+    B0_dir = [0;0;1];	% main magnetic field direction, it's always [0,0,1] because I rotate the images so that 3rd dimention is aligned with B0
     hdr = load_nii_hdr('FM_romeo_mean_rot.nii') ;
     matrixSize = hdr.dime.dim(2:4) ;	    % image matrix size
     voxelSize = ph_1tp.hdr.dime.pixdim(2:4) ;	% spatial resolution of the data, in mm

@@ -67,9 +67,6 @@ for run = 1:3
 
         end
 
-
-   
-    
     
     %%%%% END OF USER PARAMETERS %%%%%
     mag_fulldir = fullfile(in_root_dir, mag_dir) ;
@@ -117,56 +114,37 @@ for run = 1:3
             [FM, dp1, relres, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
         end
         
-        
-        if read_dir == 1
-            flag = 'odd' ;
-        else
-            flag = 'even' ;
-        end
-        
-        FM_file = sprintf('FM_%s.nii', flag) ;
-        centre_and_save_nii(make_nii(FM, ph_1tp.hdr.dime.pixdim(2:4)), FM_file , ph_1tp.hdr.dime.pixdim);
+        FM_both(:,:,:,read_dir) = FM ;
         
     end
-    clear mag ph
+    clear mag ph FM
     
-    % saving odd and even echoes as one file for ROMEO unwrapping
-    FM_odd = load_nii('FM_odd.nii') ;
-    FM_even = load_nii('FM_even.nii') ;
-    
-    FM(:,:,:,1) = FM_odd.img ;
-    FM(:,:,:,2) = FM_even.img ;
-    
+    % saving odd and even echoes as one file for ROMEO unwrapping    
     FM_file = 'FM.nii' ;
-    centre_and_save_nii(make_nii(FM), FM_file, ph_1tp.hdr.dime.pixdim);
-    clear FM
+    FM_both = make_nii(FM_both) ;
+    FM_both.hdr.hist = ph_1tp.hdr.hist ;
+    centre_and_save_nii(FM_both, FM_file, ph_1tp.hdr.dime.pixdim);
     
+    % creating magnitude reference for ROMEO unwrapping
     mag_fullfile = fullfile(mag_fulldir, mag_file);
     mag_last = load_untouch_nii(mag_fullfile) ;
-    mag_double(:,:,:,1) = mag_last.img ;
-    mag_double(:,:,:,2) = mag_last.img ;
+    mag_double = repmat(mag_last.img,[1 1 1 2]) ;
+    make_nii(mag_double)
     mag_fullfile = sprintf('mag_TE%i.nii',size(TEs,2)) ;
     centre_and_save_nii(make_nii(mag_double), mag_fullfile, ph_1tp.hdr.dime.pixdim);
     
     
-    disp('phase unwrapping with ROMEO + removing global mean value + saving quality map for masking')
+    disp('phase unwrapping with ROMEO + removing global mean value + field map calculation + saving quality map for masking')
+    TE = (TEs(3)-TEs(1))*10^3; % effective echo time difference after phase complex fitting in seconds
     [~, FM_name,~] = fileparts(FM_file) ;
     FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
     if isunix
-        unix(sprintf('%s %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_fullfile, FM_romeo_file)) ;
+        unix(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
     elseif ispc
-        system(sprintf('%s %s -m %s -o %s -t [1,1] -k nomask -g -q', romeo_command, FM_file, mag_fullfile, FM_romeo_file)) ;
+        system(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
     end
-    
-    disp('averaging odd and even field maps and scaling into Hz')
-    TE = (TEs(3)-TEs(1)); % effective echo time difference after phase complex fitting in seconds
-    FM = load_nii(FM_romeo_file) ;
-    FM_mean = (FM.img(:,:,:,1) + FM.img(:,:,:,2))/(2*TE*2*pi) ;
-    clear FM
-    FM_mean_nii= make_nii(FM_mean) ;
-    FM_mean_nii.hdr.hist = ph_1tp.hdr.hist ;
-    save_nii(FM_mean_nii, 'FM_romeo_mean.nii');
-    reslice_nii('FM_romeo_mean.nii', 'FM_romeo_mean_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
+
+    reslice_nii('B0.nii', 'B0_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
     FM_mean_nii = load_nii('FM_romeo_mean_rot.nii') ;
     FM_mean_nii.img = changeImageSize(FM_mean_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
     centre_and_save_nii(make_nii(FM_mean_nii.img), 'FM_romeo_mean_rot.nii', ph_1tp.hdr.dime.pixdim);
@@ -246,18 +224,18 @@ for run = 1:3
     end
     
     
-    output_basename = fullfile(output_fulldir, '', algorParam.bfr.method, algorParam.qsm.method)) ;
+    output_basename = fullfile(output_fulldir, 'sepia') ;
     
     disp('background field removal')
     BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
     disp('dipole inversion')
-    input(1).name = fullfile(output_fulldir, sprintf('sepia_%s_%s_local-field.nii.gz', algorParam.bfr.method, algorParam.qsm.method)) ;
+    input(1).name = fullfile(output_fulldir, 'sepia_local-field.nii.gz') ;
     QSMMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
     sprintf('run %i finished after %s' ,run, secs2hms(toc))
     
-    QSM = load_nii(fullfile(output_fulldir, sprintf('sepia_%s_%s_QSM.nii.gz', algorParam.bfr.method, algorParam.qsm.method)));
+    QSM = load_nii(fullfile(output_fulldir, 'QSM.nii.gz'));
     
     disp('rotation of QSM back to the original image space')
     QSM_invrot = flip(permute(QSM.img, [2 3 1]),1);
@@ -270,8 +248,7 @@ for run = 1:3
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
     
-    QSM_invrot_file = sprintf('sepia_%s_%s_QSM_invrot.nii.gz', algorParam.bfr.method, algorParam.qsm.method) ;
-    save_nii(make_nii(QSM_invrot), QSM_invrot_file)
+    save_nii(make_nii(QSM_invrot), 'QSM_invrot.nii.gz')
     
     QSM_all(:,:,:,run) = QSM.img ;
     QSM_all_invrot(:,:,:,run) = QSM_invrot ;

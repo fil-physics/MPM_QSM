@@ -124,6 +124,7 @@ for run = 1:3
     FM_both = make_nii(FM_both) ;
     FM_both.hdr.hist = ph_1tp.hdr.hist ;
     centre_and_save_nii(FM_both, FM_file, ph_1tp.hdr.dime.pixdim);
+    clear FM_both
     
     % creating magnitude reference for ROMEO unwrapping
     mag_fullfile = fullfile(mag_fulldir, mag_file);
@@ -132,7 +133,7 @@ for run = 1:3
     make_nii(mag_double)
     mag_fullfile = sprintf('mag_TE%i.nii',size(TEs,2)) ;
     centre_and_save_nii(make_nii(mag_double), mag_fullfile, ph_1tp.hdr.dime.pixdim);
-    
+    clear mag_double
     
     disp('phase unwrapping with ROMEO + removing global mean value + field map calculation + saving quality map for masking')
     TE = (TEs(3)-TEs(1))*10^3; % effective echo time difference after phase complex fitting in seconds
@@ -145,36 +146,37 @@ for run = 1:3
     end
 
     reslice_nii('B0.nii', 'B0_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
-    FM_mean_nii = load_nii('FM_romeo_mean_rot.nii') ;
-    FM_mean_nii.img = changeImageSize(FM_mean_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
-    centre_and_save_nii(make_nii(FM_mean_nii.img), 'FM_romeo_mean_rot.nii', ph_1tp.hdr.dime.pixdim);
+    FM = load_nii('B0_rot.nii') ;
+    FM.img = changeImageSize(FM.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+    FM.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
+    centre_and_save_nii(FM, 'B0_rot.nii', ph_1tp.hdr.dime.pixdim);
     
-    
-    clear FM_mean_nii FM_cropped
     
     disp('quality masking')
-    qmap = load_nii('quality.nii') ;
+    qmap = load_untouch_nii('quality.nii') ;
     qmap_bin = qmap.img ;
     qmap_bin(qmap.img>0.3) = 1 ;
     qmap_bin(qmap.img<=0.3) = 0 ;
+    clear qmap
     qmap_bin(isnan(qmap_bin)) = 0 ;
     qmap_bin = imfill(qmap_bin,6,'holes') ;
-    %         qmap_bin = imfill(qmap_bin,8,'holes') ; % maybe add connectivity as an user option?
-    qmask = smoothn(qmap_bin) ;
+    qmask = smooth3(qmap_bin, 'gaussian') ;
     qmask(qmask>0.6) = 1 ;
     qmask(qmask<=0.6) = 0 ;
+    clear qmap_bin
     
-    qmask_nii = make_nii(int16(qmask)) ;
-    qmask_nii.hdr.hist = ph_1tp.hdr.hist ;
+    qmask = make_nii(int16(qmask)) ;
+    qmask.hdr.hist = ph_1tp.hdr.hist ;
     qmask_file = fullfile(output_fulldir, 'mask.nii') ;
-    save_nii(qmask_nii, qmask_file);
+    save_nii(qmask, qmask_file);
     reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4), 1 , 0)
     qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
-    qmask_nii = load_nii(qmask_file) ;
-    qmask_nii.img = round(qmask_nii.img) ;
+    qmask = load_nii(qmask_file) ;
+    qmask.img = round(qmask.img) ;
     
-    qmask_nii.img = changeImageSize(qmask_nii.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
-    centre_and_save_nii(make_nii(qmask_nii.img), qmask_file, ph_1tp.hdr.dime.pixdim);
+    qmask.img = changeImageSize(qmask.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+    qmask.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
+    centre_and_save_nii(qmask, qmask_file, ph_1tp.hdr.dime.pixdim);
     
     
     %% SEPIA - calculates QSM
@@ -182,7 +184,7 @@ for run = 1:3
     % create SEPIA header
     CF = B0*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
     delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
-    B0_dir = [0;0;1];	% main magnetic field direction, it's always [0,0,1] because I rotate the images so that 3rd dimention is aligned with B0
+    B0_dir = [0;0;1];	% main magnetic field direction, it's always [0,0,1] because the images are resliced so that 3rd dimention is aligned with B0
     hdr = load_nii_hdr('FM_romeo_mean_rot.nii') ;
     matrixSize = hdr.dime.dim(2:4) ;	    % image matrix size
     voxelSize = ph_1tp.hdr.dime.pixdim(2:4) ;	% spatial resolution of the data, in mm
@@ -197,7 +199,7 @@ for run = 1:3
     algorParam.general.isGPU = 0 ;
     
     % inputs for background field removal
-    input(1).name = 'FM_romeo_mean_rot.nii' ;
+    input(1).name = 'B0_rot.nii' ;
     input(2).name = 'mask_rot.nii' ;
     input(4).name = header_fullfile ;
     
@@ -240,11 +242,19 @@ for run = 1:3
     disp('rotation of QSM back to the original image space')
     QSM_invrot = flip(permute(QSM.img, [2 3 1]),1);
     
-    M_aff(1,:) = [cos(deg2rad(alpha))    -sin(deg2rad(alpha))     0        0    ];
-    M_aff(2,:) = [sin(deg2rad(alpha))    cos(deg2rad(alpha))      0        0    ];
-    M_aff(3,:) = [0                      0                        1.0000   0    ];
-    M_aff(4,:) = [0                      0                        0        1.0000];
+     M_rot(2,:) = ph_1tp.hdr.hist.srow_x(1:3) ;
+     M_rot(3,:) = ph_1tp.hdr.hist.srow_y(1:3) ;
+     M_rot(1,:) = ph_1tp.hdr.hist.srow_z(1:3) ;
     
+    
+    M_aff = M_aff/0.6 ;
+    
+    
+%     M_aff(1,:) = [cos(deg2rad(alpha))    -sin(deg2rad(alpha))     0        0    ];
+%     M_aff(2,:) = [sin(deg2rad(alpha))    cos(deg2rad(alpha))      0        0    ];
+%     M_aff(3,:) = [0                      0                        1.0000   0    ];
+%     M_aff(4,:) = [0                      0                        0        1.0000];
+%     
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
     

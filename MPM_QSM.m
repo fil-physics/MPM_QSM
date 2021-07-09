@@ -31,10 +31,6 @@ B0 = 7;			    % magnetic field strength, in Tesla
 % 'Star-QSM' is very robust to noise and quick, may have less contrast than ndi
 algorParam.qsm.method = 'Star-QSM' ;
 
-% specify the angle of "slice rotation" (around 3rd dimention) in deg
-alpha = 30 ;
-
-
 % root directory to nifti files:
 in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
 % the data will be saved in:
@@ -241,12 +237,13 @@ for run = 1:3
     
     disp('rotation of QSM back to the original image space')
     QSM_invrot = flip(permute(QSM.img, [2 3 1]),1);
+    alpha = rad2deg(-asin(ph_1tp.hdr.hist.srow_y(2)/ph_1tp.hdr.dime.pixdim(2))) ;
     
     M_aff(1,:) = [cos(deg2rad(alpha))    -sin(deg2rad(alpha))     0        0    ];
     M_aff(2,:) = [sin(deg2rad(alpha))    cos(deg2rad(alpha))      0        0    ];
     M_aff(3,:) = [0                      0                        1.0000   0    ];
     M_aff(4,:) = [0                      0                        0        1.0000];
-    
+   
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
     

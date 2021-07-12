@@ -289,7 +289,7 @@ for run = 1:3
     
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff, ph_1tp.hdr.dime.pixdim(2:4), 1 , 0);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4));
-    QSM_invrot(isnan(QSM_invrot)) = 0;
+    QSM_all_invrot(isnan(QSM_all_invrot)) = 0;
     QSM_invrot = make_nii(QSM_invrot) ;
     QSM_invrot.hdr.hist = ph_1tp.hdr.hist ;
     centre_and_save_nii(QSM_invrot, 'sepia_QSM_invrot.nii.gz', ph_1tp.hdr.dime.pixdim)

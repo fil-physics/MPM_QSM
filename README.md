@@ -2,9 +2,19 @@
 QSM pipeline for Multi Parametric Mapping acquisitions
 
 
+# Main computational steps:
+
+ 1) complex-fit over echoes for pdw and t1w images,
+    simple phase difference for mtw images
+    for odd and even echoes done separately
+ 2) ROMEO phase unwrapping
+ 3) masking based on ROMEO quality map
+ 4) rotation to scanner space for oblique acquisitions
+ 5) PDF background field removal
+ 6) star QSM for dipole inversion as default (optional: non-linear dipole inversion)
 
 
-Installation steps:
+# Installation steps:
 
 1. Download Zip with all the files from:
 
@@ -13,7 +23,7 @@ Installation steps:
 
 2. Download compiled version of ROMEO either for windows or linux:
 	
-	https://github.com/korbinian90/ROMEO/releases/tag/v3.1.4
+	https://github.com/korbinian90/ROMEO/releases/tag/v3.2.0
 	and unzip it in chosen destination
 
 3. Download sepia toolbox:
@@ -33,6 +43,8 @@ Installation steps:
 5. Add to your matlab path: SEPIA toolbox and MPM_QSM folder
 6. Edit MPM_QSM.m user parameters, where you sepcify folders to you nifti files
 
+
+# Publications:
 
 Please remember to give credit to the authors of the methods used:
 

@@ -27,7 +27,7 @@
 % romeo_command          : path to romeo phase uwnrapping followed by romeo command, i.e. (in linux) '/your_path/bin/romeo' or (in windows) 'D:\your_path\bin\romeo'
 % B0                     : magnetic field strength, in Tesla
 % algorParam.qsm.method  : dipole inversion method, either 'Star-QSM' or 'ndi'
-%                          'ndi' - non-linear dipole inversion (also known as iterative Tikhonov), may give more contrast than Star-QSM but is less robust to noise 
+%                          'ndi' - non-linear dipole inversion (also known as iterative Tikhonov), may give more contrast than Star-QSM but is less robust to noise
 %                          'Star-QSM' is very robust to noise and quick
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
@@ -37,7 +37,7 @@
 % TEs                    : % echo time in ms
 % output_dir             : % output directory for a specific submeasurement from MPM
 % mag_file               : % magnitude reference nifti file for ROMEO unwrapping and masking
-            
+
 
 %%% Outputs:
 %%%% combined final results in out_root_dir:
@@ -47,17 +47,17 @@
 % QSM_pdw_t1w_invrot_mean.nii  : mean QSM over PDw and T1w contrasts in image space
 
 %%%% final results - per contrast in subfolders in out_root_dir:
-% sepia_QSM.nii.gz          : QSM in scanner space 
-% sepia_QSM_invrot.nii.gz   : QSM in image space 
+% sepia_QSM.nii.gz          : QSM in scanner space
+% sepia_QSM_invrot.nii.gz   : QSM in image space
 
 %%%% additional outputs:
 % ph.nii                    : two volumes (odd and even) of fitted phase
 % ph_romeo.nii              : ph.nii unwrapped with ROMEO
 % quality.nii               : quality map calculated by ROMEO algorithm and used for masking
-% mask.nii                  : binary mask in image space 
-% mask_rot.nii              : binary mask in scanner space 
-% B0.nii                    : field map in Hz in image space 
-% B0_rot.nii                : field map in Hz in scanner space 
+% mask.nii                  : binary mask in image space
+% mask_rot.nii              : binary mask in scanner space
+% B0.nii                    : field map in Hz in image space
+% B0_rot.nii                : field map in Hz in scanner space
 % sepia_local-field.nii.gz  : map of local field variations (after background field removal using PDF)
 % settings_romeo.txt        : settings used for ROMEO unwrapping (useful if unwrapping again outside MPM QSM the pipeline)
 % header_sepia.mat          : header used for SEPIA toolbox (useful when exploring SEPIA GUI)
@@ -69,43 +69,42 @@
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
 
-romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
-B0 = 7;			   
+romeo_command = 'C:\wtcnapps\romeo_win_3.2.0\bin\romeo' ;
+B0 = 7;
 algorParam.qsm.method = 'Star-QSM' ;
 
-in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
-out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan2';
+in_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis' ;
+out_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis\SEPIA';
 
 % directories, parameters and files specific to given contrast:
 for run = 1:3
     
-        switch run
+    switch run
         case 1 %pdw
-            mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; 
-            ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; 
-            TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; 
-            output_dir = 'pdw_RR_25_26' ; 
-            mag_file = 's2021-06-23_10-18-112654-00001-01728-6.nii' ; 
+            mag_dir = '59' ; % folder with magnitude niftis
+            ph_dir = '60' ; % folder with phase inftis
+            TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
+            output_dir = 'pdw_RR_59_60' ; % output directory for a specific submeasurement from MPM
+            mag_file = 'sM700159-0059-00001-001728-06-001.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
-            mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
-            ph_dir = 't1w_mfc_3dflash_v1k_0023' ;
-            TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; 
-            output_dir = 't1w_RR_22_23' ;
-            mag_file = 's2021-06-23_10-18-111631-00001-01728-6.nii' ; 
+            mag_dir = '57' ;
+            ph_dir = '58' ;
+            TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
+            output_dir = 't1w_RR_57_58' ;
+            mag_file = 'sM700159-0057-00001-001728-06-001.nii' ;
             
         case 3 % mtw
-            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0031' ;
-            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0032' ;
-            TEs = [2.2 4.58 6.96 9.34] ;
-            output_dir = 'mtw_RR_31_32' ;
-	    mag_file = 's2021-06-23_10-18-114211-00001-01152-4.nii' ; 
-
-        end
-
+            mag_dir = '55' ;
+            ph_dir = '56' ;
+            TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
+            output_dir = 'mtw_RR_55_56' ;
+            mag_file = 'sM700159-0055-00001-001152-04-001.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+    end
     
-%%%%% END OF USER PARAMETERS %%%%%
-
+    
+    %%%%% END OF USER PARAMETERS %%%%%
+    
     mag_fulldir = fullfile(in_root_dir, mag_dir) ;
     ph_fulldir = fullfile(in_root_dir, ph_dir) ;
     
@@ -156,7 +155,7 @@ for run = 1:3
     end
     clear mag ph FM
     
-    % saving odd and even echoes as one file for ROMEO unwrapping    
+    % saving odd and even echoes as one file for ROMEO unwrapping
     FM_file = 'ph.nii' ;
     FM_both = make_nii(FM_both) ;
     FM_both.hdr.hist = ph_1tp.hdr.hist ;
@@ -218,7 +217,7 @@ for run = 1:3
     qmask.img = changeImageSize(qmask.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
     qmask.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
     centre_and_save_nii(qmask, qmask_file, ph_1tp.hdr.dime.pixdim);
-    clear qmask 
+    clear qmask
     
     %% SEPIA - calculates QSM
     
@@ -265,7 +264,7 @@ for run = 1:3
         algorParam.qsm.padsize = ones(1,3)*12 ;
         
     end
-
+    
     output_basename = fullfile(output_fulldir, 'sepia') ;
     
     disp('background field removal')
@@ -287,12 +286,12 @@ for run = 1:3
     M_aff(2,:) = [sin(deg2rad(alpha))    cos(deg2rad(alpha))      0        0    ];
     M_aff(3,:) = [0                      0                        1.0000   0    ];
     M_aff(4,:) = [0                      0                        0        1.0000];
-   
+    
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
     QSM_invrot = make_nii(QSM_invrot) ;
     QSM_invrot.hdr.hist = ph_1tp.hdr.hist ;
-    centre_save_nii(QSM_invrot, 'sepia_QSM_invrot.nii.gz', ph_1tp.hdr.dime.dim.pixdim)
+    centre_and_save_nii(QSM_invrot, 'sepia_QSM_invrot.nii.gz', ph_1tp.hdr.dime.pixdim)
     
     QSM_all(:,:,:,run) = QSM.img ;
     QSM_all_invrot(:,:,:,run) = QSM_invrot ;

@@ -41,7 +41,7 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 	SEGUE_dir = [];
 
 5. Add to your matlab path: SEPIA toolbox and MPM_QSM folder
-6. Edit MPM_QSM.m user parameters, where you sepcify folders to you nifti files
+6. Edit MPM_QSM.m user parameters, where you specify folders to you nifti files
 
 
 # Publications:

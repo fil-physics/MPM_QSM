@@ -290,8 +290,9 @@ for run = 1:3
    
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
-    
-    save_nii(make_nii(QSM_invrot), 'sepia_QSM_invrot.nii.gz')
+    QSM_invrot = make_nii(QSM_invrot) ;
+    QSM_invrot.hdr.hist = ph_1tp.hdr.hist ;
+    centre_save_nii(QSM_invrot, 'sepia_QSM_invrot.nii.gz', ph_1tp.hdr.dime.dim.pixdim)
     
     QSM_all(:,:,:,run) = QSM.img ;
     QSM_all_invrot(:,:,:,run) = QSM_invrot ;
@@ -306,11 +307,23 @@ QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
 QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
 QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
 
-centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+QSM_all_mean = make_nii(QSM_all_mean) ;
+QSM_all_mean.hdr.hist = ph_1tp.hdr.hist ;
 
-centre_and_save_nii(make_nii(QSM_all_invrot_mean), fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(make_nii(QSM_pdw_t1w_invrot_mean), fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
+QSM_pdw_t1w_mean = make_nii(QSM_pdw_t1w_mean) ;
+QSM_pdw_t1w_mean.hdr.hist = ph_1tp.hdr.hist ;
+
+QSM_all_invrot_mean = make_nii(QSM_all_invrot_mean) ;
+QSM_all_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
+
+QSM_pdw_t1w_invrot_mean = make_nii(QSM_pdw_t1w_invrot_mean) ;
+QSM_pdw_t1w_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
+
+centre_and_save_nii(QSM_all_mean, fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(QSM_pdw_t1w_mean, fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+
+centre_and_save_nii(QSM_all_invrot_mean, fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(QSM_pdw_t1w_invrot_mean, fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
 
 
 sprintf('total processing finished after %s' , secs2hms(toc(tstart)))

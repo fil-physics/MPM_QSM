@@ -31,7 +31,7 @@
 %                          'Star-QSM' is very robust to noise and quick
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
-%%% Inputs - directories, parameters and files specific to given contrast
+%%%% Inputs - directories, parameters and files specific to given contrast
 % mag_dir                : % folder with magnitude niftis
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
@@ -39,33 +39,32 @@
 % mag_file               : % magnitude reference nifti file for ROMEO unwrapping and masking
             
 
-%%% Outputs are :
-%%%% combined final results:
+%%% Outputs:
+%%%% combined final results in out_root_dir:
+% QSM_all_mean.nii             : mean QSM over all contrasts in scanner space (3rd dimension is along B0-axis)
+% QSM_all_invrot_mean.nii      : mean QSM over all contrasts in image space (as acquired, for comparison with MPM quantitative maps)
+% QSM_pdw_t1w_mean.nii         : mean QSM over PDw and T1w contrasts (without noisy MTw) in scanner space
+% QSM_pdw_t1w_invrot_mean.nii  : mean QSM over PDw and T1w contrasts in image space
 
-
-%%%% final results - per contrastin contrast-specific subfolders in out_root_dir:
-% sepia_QSM.nii.gz          : QSM in scanner space (3rd dimension is along B0-axis)
-% sepia_QSM_invrot.nii.gz   : QSM in image space (as acquired, for comparison with MPM quantitative maps)
+%%%% final results - per contrast in subfolders in out_root_dir:
+% sepia_QSM.nii.gz          : QSM in scanner space 
+% sepia_QSM_invrot.nii.gz   : QSM in image space 
 
 %%%% additional outputs:
 % ph.nii                    : two volumes (odd and even) of fitted phase
 % ph_romeo.nii              : ph.nii unwrapped with ROMEO
 % quality.nii               : quality map calculated by ROMEO algorithm and used for masking
-% mask.nii                  : binary mask in image space (as acquired)
-% mask_rot.nii              : binary mask in scanner space (3rd dimension is along B0-axis)
-% B0.nii                    : field map in Hz in image space (as acquired)
-% B0_rot.nii                : field map in Hz in scanner space (3rd dimension is along B0-axis)
+% mask.nii                  : binary mask in image space 
+% mask_rot.nii              : binary mask in scanner space 
+% B0.nii                    : field map in Hz in image space 
+% B0_rot.nii                : field map in Hz in scanner space 
 % sepia_local-field.nii.gz  : map of local field variations (after background field removal using PDF)
 % settings_romeo.txt        : settings used for ROMEO unwrapping (useful if unwrapping again outside MPM QSM the pipeline)
 % header_sepia.mat          : header used for SEPIA toolbox (useful when exploring SEPIA GUI)
 
-
-
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
 % last modifications 12/07/2021
-
-
 
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
@@ -106,6 +105,7 @@ for run = 1:3
 
     
 %%%%% END OF USER PARAMETERS %%%%%
+
     mag_fulldir = fullfile(in_root_dir, mag_dir) ;
     ph_fulldir = fullfile(in_root_dir, ph_dir) ;
     
@@ -142,7 +142,7 @@ for run = 1:3
     
     for read_dir = 1:2
         
-        if size(TEs,2) < 6 % mtw has only 4 echoes so complex fit is not possible (minimum 3 echoes)
+        if size(TEs,2) < 6 % complex fit is only possible if at least 3 echoes per readout direction available
             disp('calculating phase difference')
             FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else
@@ -290,8 +290,9 @@ for run = 1:3
    
     [QSM_invrot, ~] = affine(QSM_invrot, M_aff);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4)) ;
-    
-    save_nii(make_nii(QSM_invrot), 'sepia_QSM_invrot.nii.gz')
+    QSM_invrot = make_nii(QSM_invrot) ;
+    QSM_invrot.hdr.hist = ph_1tp.hdr.hist ;
+    centre_save_nii(QSM_invrot, 'sepia_QSM_invrot.nii.gz', ph_1tp.hdr.dime.dim.pixdim)
     
     QSM_all(:,:,:,run) = QSM.img ;
     QSM_all_invrot(:,:,:,run) = QSM_invrot ;
@@ -306,12 +307,20 @@ QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
 QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
 QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
 
-centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+QSM_all_mean = make_nii(QSM_all_mean) ;
+QSM_all_mean.hdr.hist = ph_1tp.hdr.hist ;
 
-centre_and_save_nii(make_nii(QSM_all_invrot_mean), fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
+QSM_pdw_t1w_mean = make_nii(QSM_pdw_t1w_mean) ;
+QSM_pdw_t1w_mean.hdr.hist = ph_1tp.hdr.hist ;
+
+QSM_all_invrot_mean = make_nii(QSM_all_invrot_mean) ;
+QSM_all_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
+
+centre_and_save_nii(QSM_all_mean, fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(QSM_pdw_t1w_mean, fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+
+centre_and_save_nii(, fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
 centre_and_save_nii(make_nii(QSM_pdw_t1w_invrot_mean), fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
 
 
 sprintf('total processing finished after %s' , secs2hms(toc(tstart)))
-exit

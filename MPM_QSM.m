@@ -295,9 +295,9 @@ for run = 1:3
     centre_and_save_nii(QSM_invrot, 'sepia_QSM_invrot.nii.gz', ph_1tp.hdr.dime.pixdim)
     
     QSM_all(:,:,:,run) = QSM.img ;
-    QSM_all_invrot(:,:,:,run) = QSM_invrot ;
+    QSM_all_invrot(:,:,:,run) = QSM_invrot.img ;
     
-    clear QSM QSM_invrot
+%     clear QSM QSM_invrot
     delete('sepia_mask-qsm.nii.gz')
     
 end

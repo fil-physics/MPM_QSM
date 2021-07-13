@@ -68,38 +68,39 @@
 
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
+romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
 
-romeo_command = 'C:\wtcnapps\romeo_win_3.2.0\bin\romeo' ;
 B0 = 7;
 algorParam.qsm.method = 'Star-QSM' ;
 
-in_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis' ;
-out_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis\SEPIA';
+in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
+out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan1'; 
+
 
 % directories, parameters and files specific to given contrast:
 for run = 1:3
     
     switch run
         case 1 %pdw
-            mag_dir = '59' ; % folder with magnitude niftis
-            ph_dir = '60' ; % folder with phase inftis
+            mag_dir = 'pdw_mfc_3dflash_v1k_0009' ; % folder with magnitude niftis
+            ph_dir = 'pdw_mfc_3dflash_v1k_0010' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_59_60' ; % output directory for a specific submeasurement from MPM
-            mag_file = 'sM700159-0059-00001-001728-06-001.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'pdw_RR_09_10' ; % output directory for a specific submeasurement from MPM
+            mag_file = 's2021-06-23_10-18-103458-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
-            mag_dir = '57' ;
-            ph_dir = '58' ;
+            mag_dir = 't1w_mfc_3dflash_v1k_0006' ;
+            ph_dir = 't1w_mfc_3dflash_v1k_0007' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            output_dir = 't1w_RR_57_58' ;
-            mag_file = 'sM700159-0057-00001-001728-06-001.nii' ;
+            output_dir = 't1w_RR_06_07' ;
+            mag_file = 's2021-06-23_10-18-102444-00001-01728-6.nii' ;
             
         case 3 % mtw
-            mag_dir = '55' ;
-            ph_dir = '56' ;
+            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0016' ;
+            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0017' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            output_dir = 'mtw_RR_55_56' ;
-            mag_file = 'sM700159-0055-00001-001152-04-001.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'mtw_RR_16_17' ;
+            mag_file = 's2021-06-23_10-18-105228-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
     end
     
     
@@ -126,8 +127,8 @@ for run = 1:3
         
         if size(TEs,2) >= 6 % for mtw acquisition we cannot perform complex fit so we don't need magnitude data for each TE
             
-            mag_1tp = load_untouch_nii(fullfile(mag_fulldir, mag_files(t+2).name)).img ;
-            mag(:,:,:,t) = mag_1tp ;
+            mag_1tp = load_untouch_nii(fullfile(mag_fulldir, mag_files(t+2).name)) ;
+            mag(:,:,:,t) = mag_1tp.img ;
             
         end
         
@@ -178,9 +179,12 @@ for run = 1:3
     [~, FM_name,~] = fileparts(FM_file) ;
     FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
     if isunix
-        unix(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
+        status =  unix(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
     elseif ispc
-        system(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
+        status = system(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
+    end
+    if status == 1
+        error('ROMEO did not run properly - check your installation path')
     end
     delete('mag_TE6.nii');
     reslice_nii('B0.nii', 'B0_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)

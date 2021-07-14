@@ -68,41 +68,38 @@
 
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
-romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
-
-B0 = 7;
+romeo_command = 'C:\wtcnapps\romeo_win_3.2.0\bin\romeo' ;
+B0 = 7;			   
 algorParam.qsm.method = 'Star-QSM' ;
 
-in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
-out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan1'; 
-
+in_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis' ;
+out_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210603.M700159_FIL_analysis\SEPIA';
 
 % directories, parameters and files specific to given contrast:
 for run = 1:3
     
-    switch run
+        switch run
         case 1 %pdw
-            mag_dir = 'pdw_mfc_3dflash_v1k_0009' ; % folder with magnitude niftis
-            ph_dir = 'pdw_mfc_3dflash_v1k_0010' ; % folder with phase inftis
+            mag_dir = '59' ; % folder with magnitude niftis
+            ph_dir = '60' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_09_10' ; % output directory for a specific submeasurement from MPM
-            mag_file = 's2021-06-23_10-18-103458-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'pdw_RR_59_60' ; % output directory for a specific submeasurement from MPM
+            mag_file = 'sM700159-0059-00001-001728-06-001.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
-            mag_dir = 't1w_mfc_3dflash_v1k_0006' ;
-            ph_dir = 't1w_mfc_3dflash_v1k_0007' ;
-            TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            output_dir = 't1w_RR_06_07' ;
-            mag_file = 's2021-06-23_10-18-102444-00001-01728-6.nii' ;
+            mag_dir = '57' ;
+            ph_dir = '58' ;
+            TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ; 
+            output_dir = 't1w_RR_57_58' ;
+            mag_file = 'sM700159-0057-00001-001728-06-001.nii' ; 
             
         case 3 % mtw
-            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0016' ;
-            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0017' ;
+            mag_dir = '55' ;
+            ph_dir = '56' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            output_dir = 'mtw_RR_16_17' ;
-            mag_file = 's2021-06-23_10-18-105228-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'mtw_RR_55_56' ;
+            mag_file = 'sM700159-0055-00001-001152-04-001.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
     end
-    
     
     %%%%% END OF USER PARAMETERS %%%%%
     
@@ -291,10 +288,10 @@ for run = 1:3
     M_aff(3,:) = [0                      0                        1.0000   0    ];
     M_aff(4,:) = [0                      0                        0        1.0000];
     
-    [QSM_invrot, ~] = affine(QSM_invrot, M_aff, ph_1tp.hdr.dime.pixdim(2:4), 1 , 0);
+    [QSM_invrot, ~] = affine(QSM_invrot, M_aff, [1 1 1], 1 , 0);
     QSM_invrot = changeImageSize(QSM_invrot, ph_1tp.hdr.dime.dim(2:4));
     QSM_invrot(isnan(QSM_invrot)) = 0;
-    QSM_invrot = make_nii(QSM_invrot) ;
+    QSM_invrot = make_nii(QSM_invrot, ph_1tp.hdr.dime.pixdim(2:4)) ;
     QSM_invrot.hdr.hist = ph_1tp.hdr.hist ;
     centre_and_save_nii(QSM_invrot, 'sepia_QSM_invrot.nii.gz', ph_1tp.hdr.dime.pixdim)
     
@@ -312,20 +309,14 @@ QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
 QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
 QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
 
-QSM_all_mean = make_nii(QSM_all_mean) ;
-QSM_all_mean.hdr.hist = ph_1tp.hdr.hist ;
-
-QSM_pdw_t1w_mean = make_nii(QSM_pdw_t1w_mean) ;
-QSM_pdw_t1w_mean.hdr.hist = ph_1tp.hdr.hist ;
-
-QSM_all_invrot_mean = make_nii(QSM_all_invrot_mean) ;
+QSM_all_invrot_mean = make_nii(QSM_all_invrot_mean, ph_1tp.hdr.dime.pixdim(2:4)) ;
 QSM_all_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
 
-QSM_pdw_t1w_invrot_mean = make_nii(QSM_pdw_t1w_invrot_mean) ;
+QSM_pdw_t1w_invrot_mean = make_nii(QSM_pdw_t1w_invrot_mean, ph_1tp.hdr.dime.pixdim(2:4)) ;
 QSM_pdw_t1w_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
 
-centre_and_save_nii(QSM_all_mean, fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(QSM_pdw_t1w_mean, fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
+centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
 
 centre_and_save_nii(QSM_all_invrot_mean, fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
 centre_and_save_nii(QSM_pdw_t1w_invrot_mean, fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);

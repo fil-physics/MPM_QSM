@@ -183,7 +183,7 @@ for run = 1:3
     if status == 1
         error('ROMEO did not run properly - check your installation path')
     end
-    delete('mag_TE6.nii');
+    delete(sprintf('mag_TE%i.nii',size(TEs,2)));
     reslice_nii('B0.nii', 'B0_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
     FM = load_nii('B0_rot.nii') ;
     FM.img(isnan(FM.img)) = 0;

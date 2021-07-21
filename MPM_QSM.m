@@ -188,8 +188,18 @@ for run = 1:3
     FM = load_nii('B0_rot.nii') ;
     FM.img(isnan(FM.img)) = 0;
     FM.img = changeImageSize(FM.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+    
+    %%% correction for image shift after cropping
+    Maff_orig(1,:) = ph_1tp.hdr.hist.srow_x ;
+    Maff_orig(2,:) = ph_1tp.hdr.hist.srow_y ;
+    Maff_orig(3,:) = ph_1tp.hdr.hist.srow_z ;
+    Maff_orig(4,:) = [0  0  0  1.0000];
+    O = Maff_orig\[0 0 0 1]' ;
+    O = O(1:3)' ;
+    
     FM.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
-    centre_and_save_nii(FM, 'B0_rot.nii', ph_1tp.hdr.dime.pixdim);
+    FM.hdr.hist.originator(1:3) = circshift(O,1) ;
+    save_nii(FM, 'B0_rot.nii');
     clear FM
     
     disp('quality masking')
@@ -217,7 +227,8 @@ for run = 1:3
     
     qmask.img = changeImageSize(qmask.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
     qmask.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
-    centre_and_save_nii(qmask, qmask_file, ph_1tp.hdr.dime.pixdim);
+    qmask.hdr.hist.originator(1:3) = circshift(O,1) ; % correction for image shift after cropping
+    save_nii(qmask, qmask_file);
     clear qmask
     
     %% SEPIA - calculates QSM

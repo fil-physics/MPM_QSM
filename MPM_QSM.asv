@@ -200,7 +200,7 @@ for run = 1:3
     
     
     FM.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
-    FM.hdr.hist.originator(1:3) = FM.hdr.hist.originator(1:3) + circshift(O_shift,1)+ [ 1 1 1] ;%circshift(O,1) ;
+    FM.hdr.hist.originator(1:3) = FM.hdr.hist.originator(1:3) + circshift(O_shift,1) ;%circshift(O,1) ;
     save_nii(FM, 'B0_rot.nii');
     clear FM
     
@@ -223,13 +223,13 @@ for run = 1:3
     qmask_file = fullfile(output_fulldir, 'mask.nii') ;
     save_nii(qmask, qmask_file);
     reslice_nii('mask.nii', 'mask_rot.nii', ph_1tp.hdr.dime.pixdim(2:4), 1 , 0)
-    qmask_file = fullfile('mask_rot.nii') ;
+    qmask_file = fullfile(output_fulldir, 'mask_rot.nii') ;
     qmask = load_nii(qmask_file) ;
     qmask.img = round(qmask.img) ;
     
     qmask.img = changeImageSize(qmask.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
     qmask.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
-    qmask.hdr.hist.originator(1:3) = qmask.hdr.hist.originator(1:3) + circshift(O_shift,1)+ [ 1 1 1] ; % correction for image shift after cropping
+    qmask.hdr.hist.originator(1:3) = qmask.hdr.hist.originator(1:3) + circshift(O_shift,1) ; % correction for image shift after cropping
     save_nii(qmask, qmask_file);
     clear qmask
     

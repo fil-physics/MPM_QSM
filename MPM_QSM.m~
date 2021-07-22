@@ -339,10 +339,10 @@ QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
 QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
 
 QSM_all_invrot_mean = make_nii(QSM_all_invrot_mean, ph_1tp.hdr.dime.pixdim(2:4)) ;
-% QSM_all_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
+QSM_all_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
 
 QSM_pdw_t1w_invrot_mean = make_nii(QSM_pdw_t1w_invrot_mean, ph_1tp.hdr.dime.pixdim(2:4)) ;
-% QSM_pdw_t1w_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
+QSM_pdw_t1w_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
 
 centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
 centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);

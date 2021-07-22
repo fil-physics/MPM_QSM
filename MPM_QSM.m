@@ -130,7 +130,10 @@ for run = 1:3
         end
         
     end
-    
+    ph_1tp_spm = nifti(fullfile(ph_fulldir, ph_files(t+2).name)) ;
+    Maff_orig = ph_1tp_spm.mat ;
+    O = Maff_orig\[0 0 0 1]' ;
+    O = O(1:3)' ;
     
     clear ph_1tp.img mag_1tp
     
@@ -157,6 +160,7 @@ for run = 1:3
     FM_file = 'ph.nii' ;
     FM_both = make_nii(FM_both) ;
     FM_both.hdr.hist = ph_1tp.hdr.hist ;
+    
     centre_and_save_nii(FM_both, FM_file, ph_1tp.hdr.dime.pixdim);
     clear FM_both
     
@@ -185,6 +189,24 @@ for run = 1:3
     end
     delete(sprintf('mag_TE%i.nii',size(TEs,2)));
 %%%%%% 
+% defining affine matrix in scanner space for data rotation to scanner
+% space with mantaining the same image origin (i.e. no translation)
+pixdim = ph_1tp.hdr.dime.pixdim(2:4) ;
+data_dim = ph_1tp.hdr.dime.dim(2:4) ;
+M_scanner(1,:) = [pixdim(1) 0 0 -pixdim(1)*O(1)] ;
+M_scanner(2,:) = [0 pixdim(2) 0 -pixdim(2)*O(2)] ;
+M_scanner(3,:) = [0 0 pixdim(3) -pixdim(3)*O(3)] ;
+M_scanner(4,:) = [0 0 0 1] ;
+
+FM = nifti('B0.nii') ;
+
+FM2scanner_mat = FM.mat\M_scanner ;
+FMrot = zeros(data_dim) ;
+for slice = 1 : data_dim(3)
+%     FMrot(:,:,slize) = spm_slice_vol(spm_vol(
+end
+
+
     % Image A
 imA = nifti([pn 'imA.nii']);
 
@@ -201,23 +223,23 @@ end
 
 Utils.IO.createNifti(dataOut, [pn 'reslicedimBw.nii'], imA.mat)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    reslice_nii('B0.nii', 'B0_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
-    FM = load_nii('B0_rot.nii') ;
-    FM.img(isnan(FM.img)) = 0;
-    FM.img = changeImageSize(FM.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
-    
-    %%% correction for image shift after cropping
-    Maff_orig(1,:) = ph_1tp.hdr.hist.srow_x ;
-    Maff_orig(2,:) = ph_1tp.hdr.hist.srow_y ;
-    Maff_orig(3,:) = ph_1tp.hdr.hist.srow_z ;
-    Maff_orig(4,:) = [0  0  0  1.0000];
-    O = Maff_orig\[0 0 0 1]' ;
-    O = O(1:3)' ;
-    
-    FM.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
-    FM.hdr.hist.originator(1:3) = circshift(O,1) ;
-    save_nii(FM, 'B0_rot.nii');
-    clear FM
+% % %     reslice_nii('B0.nii', 'B0_rot.nii',ph_1tp.hdr.dime.pixdim(2:4), 1, 0)
+% % %     FM = load_nii('B0_rot.nii') ;
+% % %     FM.img(isnan(FM.img)) = 0;
+% % %     FM.img = changeImageSize(FM.img, circshift(ph_1tp.hdr.dime.dim(2:4),1)) ;
+% % %     
+% % %     %%% correction for image shift after cropping
+% % %     Maff_orig(1,:) = ph_1tp.hdr.hist.srow_x ;
+% % %     Maff_orig(2,:) = ph_1tp.hdr.hist.srow_y ;
+% % %     Maff_orig(3,:) = ph_1tp.hdr.hist.srow_z ;
+% % %     Maff_orig(4,:) = [0  0  0  1.0000];
+% % %     O = Maff_orig\[0 0 0 1]' ;
+% % %     O = O(1:3)' ;
+% % %     
+% % %     FM.hdr.dime.dim(2:4) = circshift(ph_1tp.hdr.dime.dim(2:4),1) ;
+% % %     FM.hdr.hist.originator(1:3) = circshift(O,1) ;
+% % %     save_nii(FM, 'B0_rot.nii');
+% % %     clear FM
     
     disp('quality masking')
     qmap = load_untouch_nii('quality.nii') ;

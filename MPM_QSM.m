@@ -85,21 +85,21 @@ for run = 1:3
             mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; % folder with magnitude niftis
             ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_25_26' ; % output directory for a specific submeasurement from MPM
+            output_dir = 'pdw_25_26' ; % output directory for a specific submeasurement from MPM
             mag_file = 's2021-06-23_10-18-112654-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
             mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
             ph_dir = 't1w_mfc_3dflash_v1k_0023' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            output_dir = 't1w_RR_22_23' ;
+            output_dir = 't1w_22_23' ;
             mag_file = 's2021-06-23_10-18-111631-00001-01728-6.nii' ;
             
         case 3 % mtw
             mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0031' ;
             ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0032' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            output_dir = 'mtw_RR_31_32' ;
+            output_dir = 'mtw_31_32' ;
             mag_file = 's2021-06-23_10-18-114211-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
     end
     
@@ -202,14 +202,19 @@ for run = 1:3
     M_scanner(4,:) = [0 0 0 1] ;
     
     FM = nifti('B0.nii') ;
+    fm_data = FM.dat(:,:,:) ;
+    fm_data(isnan(fm_data)) = 0 ;
+    FM_V = spm_vol('B0.nii');
+    spm_write_vol(FM_V, fm_data) ;
     
     img2scanner_mat = FM.mat\M_scanner ;
     FMrot = zeros(data_dim) ;
-    FM_V = spm_vol('B0.nii');
+    
     for slice = 1 : data_dim(3)
         FMrot(:,:,slice) = spm_slice_vol(FM_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim(1:2), -7) ;
     end
     
+    FMrot(isnan(FMrot)) = 0 ;
     FMrot_V = FM_V ;
     FMrot_V.mat = M_scanner ;
     FMrot_V.fname = 'B0_rot.nii';
@@ -240,7 +245,7 @@ for run = 1:3
     for slice = 1 : data_dim(3)
         mask_rot(:,:,slice) = spm_slice_vol(mask_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim(1:2), -7) ;
     end
-    
+    mask_rot(isnan(mask_rot)) = 0 ;
     mask_rot_V = mask_V ;
     mask_rot_V.mat = M_scanner ;
     mask_rot_V.fname = 'mask_rot.nii';
@@ -324,8 +329,8 @@ for run = 1:3
     QSMinvrot_V.fname = 'sepia_QSM_invrot.nii';
     spm_write_vol(QSMinvrot_V, QSMinvrot)
  
-    QSM_all(:,:,:,run) = QSM.dat ;
-    QSM_all_invrot(:,:,:,run) = QSM_invrot ;
+    QSM_all(:,:,:,run) = QSM.dat(:,:,:) ;
+    QSM_all_invrot(:,:,:,run) = QSMinvrot ;
     
     %     clear QSM QSM_invrot
     delete('sepia_mask-qsm.nii.gz')

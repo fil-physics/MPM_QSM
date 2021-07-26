@@ -74,7 +74,7 @@ B0 = 7;
 algorParam.qsm.method = 'Star-QSM' ;
 
 in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
-out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan1';
+out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan2'; 
 
 
 % directories, parameters and files specific to given contrast:
@@ -82,27 +82,27 @@ for run = 1:3
     
     switch run
         case 1 %pdw
-            mag_dir = 'pdw_mfc_3dflash_v1k_0009' ; % folder with magnitude niftis
-            ph_dir = 'pdw_mfc_3dflash_v1k_0010' ; % folder with phase inftis
+            mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; % folder with magnitude niftis
+            ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; % folder with phase inftis
             TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            output_dir = 'pdw_RR_09_10' ; % output directory for a specific submeasurement from MPM
-            mag_file = 's2021-06-23_10-18-103458-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'pdw_25_26' ; % output directory for a specific submeasurement from MPM
+            mag_file = 's2021-06-23_10-18-112654-00001-01728-6.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
             
         case 2 % t1w
-            mag_dir = 't1w_mfc_3dflash_v1k_0006' ;
-            ph_dir = 't1w_mfc_3dflash_v1k_0007' ;
+            mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
+            ph_dir = 't1w_mfc_3dflash_v1k_0023' ;
             TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            output_dir = 't1w_RR_06_07' ;
-            mag_file = 's2021-06-23_10-18-102444-00001-01728-6.nii' ;
+            output_dir = 't1w_22_23' ;
+            mag_file = 's2021-06-23_10-18-111631-00001-01728-6.nii' ;
             
         case 3 % mtw
-            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0016' ;
-            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0017' ;
+            mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0031' ;
+            ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0032' ;
             TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            output_dir = 'mtw_RR_16_17' ;
-            mag_file = 's2021-06-23_10-18-105228-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+            output_dir = 'mtw_31_32' ;
+            mag_file = 's2021-06-23_10-18-114211-00001-01152-4.nii' ; % magnitude reference nifti file for ROMEO unwrapping and masking
+ 
     end
-    
     
     
     %%%%% END OF USER PARAMETERS %%%%%
@@ -134,14 +134,7 @@ for run = 1:3
         end
         
     end
-    data_dim = size(ph_1tp.dat) ;
-    Z = spm_imatrix(ph_1tp.mat) ;
-    pixdim = Z(7:9);
-    Maff_image = ph_1tp.mat ;
-%     O = Maff_image\[0 0 0 1]' ;
-%     O = O(1:3)' ;
-    Z(4:6) = 0 ;
-    Maff_scanner = spm_matrix(Z) ;
+    
     
     % rescaling phase into [0,2*pi] phase range
     ph = 2*pi*single(ph - min(vector(ph)))/single(max(vector(ph))-min(vector(ph))) ;
@@ -169,12 +162,12 @@ for run = 1:3
             FM(:,:,:,read_dir) = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else
             disp('complex fitting phase')
-%             compl = single(mag).*exp(-1i*ph);
-%             [FM_1, ~, ~, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
-%             FM(:,:,:,read_dir) = FM_1 ;
+            compl = single(mag).*exp(-1i*ph);
+            [FM_1, ~, ~, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
+            FM(:,:,:,read_dir) = FM_1 ;
         end
         
-%         spm_write_vol(ph_V(read_dir),  FM(:,:,:,read_dir)) ;
+        spm_write_vol(ph_V(read_dir),  FM(:,:,:,read_dir)) ;
         spm_write_vol(mag_V(read_dir), mag_ref(:,:,:,read_dir)) ;
         
     end
@@ -202,12 +195,19 @@ for run = 1:3
     %% field map rotation to scanner space
     % defining affine matrix in scanner space for data rotation to scanner
     % space with mantaining the same image origin (i.e. no translation)
-    %     M_scanner(1,:) = [0 0 pixdim(3) -pixdim(3)*O(3)] ;
-    %     M_scanner(2,:) = [pixdim(1) 0 0 -pixdim(1)*O(1)] ;
-    %     M_scanner(3,:) = [0 pixdim(2) 0 -pixdim(2)*O(2)] ;
-    %     M_scanner(4,:) = [0 0 0 1] ;
-
     
+    data_dim = size(ph_1tp.dat) ;
+    Z = spm_imatrix(ph_1tp.mat) ;
+    pixdim = Z(7:9);
+    
+    Maff_image = ph_1tp.mat ;
+    O = Maff_image\[0 0 0 1]' ;
+    O = O(1:3)' ;
+    
+    Maff_scanner(1,:) = [0 0 pixdim(3) -pixdim(3)*O(3)] ;
+    Maff_scanner(2,:) = [pixdim(1) 0 0 -pixdim(1)*O(1)] ;
+    Maff_scanner(3,:) = [0 pixdim(2) 0 -pixdim(2)*O(2)] ;
+    Maff_scanner(4,:) = [0 0 0 1] ;
     
     
     FM = nifti('B0.nii') ;
@@ -215,8 +215,8 @@ for run = 1:3
     fm_data(isnan(fm_data)) = 0 ;
     FM_V = spm_vol('B0.nii');
     spm_write_vol(FM_V, fm_data) ;
-    
-    img2scanner_mat = FM.mat\Maff_scanner ;
+    clear FM
+    img2scanner_mat = Maff_image\Maff_scanner ;
     FMrot = zeros(data_dim) ;
     
     for slice = 1 : data_dim(3)
@@ -316,7 +316,7 @@ for run = 1:3
     gunzip('sepia_QSM.nii.gz')
     QSM = nifti('sepia_QSM.nii') ;
     
-    scanner2img_mat = Maff_scanner\FM.mat ;
+    scanner2img_mat = Maff_scanner\Maff_image ;
     QSMinvrot = zeros(data_dim) ;
     QSM_V = spm_vol('sepia_QSM.nii');
     for slice = 1 : data_dim(3)

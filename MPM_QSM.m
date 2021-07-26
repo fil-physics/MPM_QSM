@@ -122,70 +122,85 @@ for run = 1:3
     
     for t = 1:size(TEs,2)
         
-        ph_1tp = load_untouch_nii(fullfile(ph_fulldir, ph_files(t+2).name));
-        ph(:,:,:,t) = ph_1tp.img ;
+        ph_1tp = nifti(fullfile(ph_fulldir, ph_files(t+2).name));
+        ph(:,:,:,t) = ph_1tp.dat(:,:,:) ;
         
         if size(TEs,2) >= 6 % for mtw acquisition we cannot perform complex fit so we don't need magnitude data for each TE
             
-            mag_1tp = load_untouch_nii(fullfile(mag_fulldir, mag_files(t+2).name)) ;
-            mag(:,:,:,t) = mag_1tp.img ;
+            mag_1tp = nifti(fullfile(mag_fulldir, mag_files(t+2).name)) ;
+            mag(:,:,:,t) = mag_1tp.dat(:,:,:) ;
             
         end
         
     end
-    ph_1tp_spm = nifti(fullfile(ph_fulldir, ph_files(t+2).name)) ;
-    Maff_orig = ph_1tp_spm.mat ;
+    
+    Maff_orig = ph_1tp.mat ;
     O = Maff_orig\[0 0 0 1]' ;
     O = O(1:3)' ;
     
-    clear ph_1tp.img mag_1tp
     
     % rescaling phase into [0,2*pi] phase range
     ph = 2*pi*single(ph - min(vector(ph)))/single(max(vector(ph))-min(vector(ph))) ;
     
+    clear ph_V % otherwise if there is already this structure in memory it does not like it
+    ph_V(1) = spm_vol(fullfile(ph_fulldir, ph_files(3).name)) ;
+    ph_V(1).fname = 'ph.nii' ;
+    ph_V(1).dt = [16 0] ;
+    ph_V(1).descript = '';
+    ph_V(2) =  ph_V(1) ;
+    
+    clear mag_V % otherwise if there is already this structure in memory it does not like it 
+    mag_V(1) = spm_vol(fullfile(mag_fulldir, mag_files(size(TEs,2)+2).name));
+    mag_V(1).fname = sprintf('mag_TE%i.nii',size(TEs,2));
+    mag_V(1).descript = '';
+    mag_V(2) = mag_V(1) ;
+    mag_ref = nifti(fullfile(mag_fulldir, mag_files(size(TEs,2)+2).name)) ;
+    mag_ref = repmat(mag_ref.dat(:,:,:),[1 1 1 2]) ;
     for read_dir = 1:2
         
         if size(TEs,2) < 6 % complex fit is only possible if at least 3 echoes per readout direction available
             disp('calculating phase difference')
-            FM = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
+            FM(:,:,:,read_dir) = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else
             disp('complex fitting phase')
             compl = single(mag).*exp(-1i*ph);
-            [FM, ~, ~, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
+            [FM_1, ~, ~, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
+            FM(:,:,:,read_dir) = FM_1 ;
         end
-        
-        FM_both(:,:,:,read_dir) = FM ;
-        
+
+        spm_write_vol(ph_V(read_dir),  FM(:,:,:,read_dir)) ;
+        spm_write_vol(mag_V(read_dir), mag_ref(:,:,:,read_dir)) ;
+  
     end
-    clear mag ph FM
+%     clear mag ph FM mag_ref
     
-    % saving odd and even echoes as one file for ROMEO unwrapping
-    FM_file = 'ph.nii' ;
-    FM_both = make_nii(FM_both) ;
-    FM_both.hdr.hist = ph_1tp.hdr.hist ;
+    % % %     % saving odd and even echoes as one file for ROMEO unwrapping
+    % % %     FM_file = 'ph.nii' ;
+    % % %     FM_both = make_nii(FM_both) ;
+    % % %     FM_both.hdr.hist = ph_1tp.hdr.hist ;
+    % % %
+    % % %     centre_and_save_nii(FM_both, FM_file, ph_1tp.hdr.dime.pixdim);
+    % % %     clear FM_both
     
-    centre_and_save_nii(FM_both, FM_file, ph_1tp.hdr.dime.pixdim);
-    clear FM_both
-    
-    % creating magnitude reference for ROMEO unwrapping
-    mag_fullfile = fullfile(mag_fulldir, mag_file);
-    mag_ref = load_untouch_nii(mag_fullfile) ;
-    mag_ref = repmat(mag_ref.img,[1 1 1 2]) ;
-    mag_fullfile = sprintf('mag_TE%i.nii',size(TEs,2)) ;
-    centre_and_save_nii(make_nii(mag_ref), mag_fullfile, ph_1tp.hdr.dime.pixdim);
-    clear mag_ref
+% % %     % creating magnitude reference for ROMEO unwrapping
+% % %     mag_fullfile = fullfile(mag_fulldir, mag_file);
+% % %     mag_ref = load_untouch_nii(mag_fullfile) ;
+% % %     mag_ref = repmat(mag_ref.img,[1 1 1 2]) ;
+% % %     mag_fullfile = sprintf('mag_TE%i.nii',size(TEs,2)) ;
+% % %     centre_and_save_nii(make_nii(mag_ref), mag_fullfile, ph_1tp.hdr.dime.pixdim);
+% % %     clear mag_ref
     
     disp('phase unwrapping with ROMEO and:')
     disp('...removing global mean value')
     disp('......field map calculation')
     disp('.........saving quality map for masking')
     TE = (TEs(3)-TEs(1))*10^3; % effective echo time difference after phase complex fitting in seconds
-    [~, FM_name,~] = fileparts(FM_file) ;
+    [~, FM_name,~] = fileparts(ph_V(1).fname) ;
     FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
     if isunix
-        status =  unix(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
+        status =  unix(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, ph_V(1).fname, mag_V(1).fname, FM_romeo_file, TE, TE)) ;
     elseif ispc
-        status = system(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, FM_file, mag_fullfile, FM_romeo_file, TE, TE)) ;
+        status = system(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', romeo_command, ph_V(1).fname, mag_V(1).fname, FM_romeo_file, TE, TE)) ;
     end
     if status == 1
         error('ROMEO did not run properly - check your installation path')
@@ -194,8 +209,9 @@ for run = 1:3
     %%%%%%
     % defining affine matrix in scanner space for data rotation to scanner
     % space with mantaining the same image origin (i.e. no translation)
-    pixdim = ph_1tp.hdr.dime.pixdim(2:4) ;
-    data_dim = ph_1tp.hdr.dime.dim(2:4) ;
+    hdr = load_nii_hdr(fullfile(mag_fulldir, mag_files(3).name)) ;
+    pixdim = hdr.dime.pixdim(2:4) ;
+    data_dim = hdr.dime.dim(2:4) ;
     M_scanner(1,:) = [0 0 pixdim(3) -pixdim(3)*O(3)] ;
     M_scanner(2,:) = [pixdim(1) 0 0 -pixdim(1)*O(1)] ;
     M_scanner(3,:) = [0 pixdim(2) 0 -pixdim(2)*O(2)] ;
@@ -219,7 +235,7 @@ for run = 1:3
     FMrot_V.mat = M_scanner ;
     FMrot_V.fname = 'B0_rot.nii';
     spm_write_vol(FMrot_V, FMrot)
-
+    
     
     disp('quality masking')
     qmap = load_untouch_nii('quality.nii') ;
@@ -235,8 +251,8 @@ for run = 1:3
     clear qmap_bin
     
     qmask = make_nii(int16(qmask)) ;
-    qmask.hdr.hist = ph_1tp.hdr.hist ;
-    qmask.hdr.dime.pixdim = ph_1tp.hdr.dime.pixdim ;
+    qmask.hdr.hist = hdr.hist ;
+    qmask.hdr.dime.pixdim = hdr.dime.pixdim ;
     qmask_file = fullfile(output_fulldir, 'mask.nii') ;
     save_nii(qmask, qmask_file);
     
@@ -250,7 +266,7 @@ for run = 1:3
     mask_rot_V.mat = M_scanner ;
     mask_rot_V.fname = 'mask_rot.nii';
     spm_write_vol(mask_rot_V, mask_rot)
-
+    
     clear qmask
     
     %% SEPIA - calculates QSM
@@ -259,9 +275,8 @@ for run = 1:3
     CF = B0*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
     delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
     B0_dir = [0;1;0];	% main magnetic field direction, it's always [0,1,0] because the images are resliced so that 2nd dimension is aligned with B0
-    hdr = load_nii_hdr('B0_rot.nii') ;
-    matrixSize = hdr.dime.dim(2:4) ;	    % image matrix size
-    voxelSize = ph_1tp.hdr.dime.pixdim(2:4) ;	% spatial resolution of the data, in mm
+    matrixSize = data_dim ;	    % image matrix size
+    voxelSize = pixdim ;	% spatial resolution of the data, in mm
     header_fullfile = fullfile(output_fulldir, 'header_sepia.mat') ;
     save(header_fullfile, 'B0', 'B0_dir', 'CF', 'TE', 'delta_TE', 'matrixSize', 'voxelSize')
     
@@ -310,12 +325,10 @@ for run = 1:3
     
     sprintf('run %i finished after %s' ,run, secs2hms(toc(tstart)))
     
-    QSM_V = spm_vol(fullfile(output_fulldir, 'sepia_QSM.nii.gz'));
-    
     disp('rotation of QSM back to the original image space')
     
     %%%%%%
-    gunzip('sepia_QSM.nii.gz') 
+    gunzip('sepia_QSM.nii.gz')
     QSM = nifti('sepia_QSM.nii') ;
     
     scanner2img_mat = M_scanner\FM.mat ;
@@ -328,7 +341,7 @@ for run = 1:3
     QSMinvrot_V = FM_V ;
     QSMinvrot_V.fname = 'sepia_QSM_invrot.nii';
     spm_write_vol(QSMinvrot_V, QSMinvrot)
- 
+    
     QSM_all(:,:,:,run) = QSM.dat(:,:,:) ;
     QSM_all_invrot(:,:,:,run) = QSMinvrot ;
     
@@ -337,23 +350,22 @@ for run = 1:3
     
 end
 
-QSM_all_mean = mean(QSM_all, 4) ;
 QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
+QSM_all_mean = mean(QSM_all, 4) ;
 
-QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
 QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
+QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
 
-QSM_all_invrot_mean = make_nii(QSM_all_invrot_mean, ph_1tp.hdr.dime.pixdim(2:4)) ;
-% QSM_all_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
 
-QSM_pdw_t1w_invrot_mean = make_nii(QSM_pdw_t1w_invrot_mean, ph_1tp.hdr.dime.pixdim(2:4)) ;
-% QSM_pdw_t1w_invrot_mean.hdr.hist = ph_1tp.hdr.hist ;
+QSM_V.fname = fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii') ;
+spm_write_vol(QSM_V, QSM_pdw_t1w_mean)
+QSM_V.fname = fullfile(out_root_dir,'QSM_all_mean.nii') ;
+spm_write_vol(QSM_V, QSM_all_mean)
 
-centre_and_save_nii(make_nii(QSM_all_mean), fullfile(out_root_dir,'QSM_all_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(make_nii(QSM_pdw_t1w_mean), fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii'), ph_1tp.hdr.dime.pixdim);
-
-centre_and_save_nii(QSM_all_invrot_mean, fullfile(out_root_dir,'QSM_all_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
-centre_and_save_nii(QSM_pdw_t1w_invrot_mean, fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii'), ph_1tp.hdr.dime.pixdim);
+QSMinvrot_V.fname = fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii') ;
+spm_write_vol(QSMinvrot_V, QSM_pdw_t1w_invrot_mean)
+QSMinvrot_V.fname = fullfile(out_root_dir,'QSM_all_invrot_mean.nii') ;
+spm_write_vol(QSMinvrot_V, QSM_all_invrot_mean)
 
 
 sprintf('total processing finished after %s' , secs2hms(toc(tstart)))

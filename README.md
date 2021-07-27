@@ -53,20 +53,20 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 Please remember to give credit to the authors of the methods used:
 
 1. SEPIA toolbox:
-Chan, K.-S., Marques, J.P., 2021. SEPIA—Susceptibility mapping pipeline tool for phase images. Neuroimage 227, 117611.
+Chan KS, Marques JP. "SEPIA—Susceptibility mapping pipeline tool for phase images." Neuroimage 227 (2021), 117611.
 
 2. SPM12 - rigid body registration:
-Friston KJ, Williams SR, Howard R Frackowiak RSJ and Turner R. Movement-related effect in fMRI time-series. Magnetic Resonance in Medicine 35 (1995):346-355
+Friston KJ, et al. "Movement-related effect in fMRI time-series." Magnetic Resonance in Medicine 35 (1995):346-355
 
 4. complex fit of the phase:
-Liu, Tian, et al. "Nonlinear formulation of the magnetic field to source relationship for robust quantitative susceptibility mapping." Magnetic resonance in medicine 69.2 (2013): 467-476.
+Liu T, et al. "Nonlinear formulation of the magnetic field to source relationship for robust quantitative susceptibility mapping." Magnetic resonance in medicine 69.2 (2013): 467-476.
 
 3. ROMEO phase uwnrapping:
-Dymerska, Barbara, and Eckstein, Korbinian et al. "Phase unwrapping with a rapid opensource minimum spanning tree algorithm (ROMEO)." Magnetic Resonance in Medicine (2020).
+Dymerska B, and Eckstein K et al. "Phase unwrapping with a rapid opensource minimum spanning tree algorithm (ROMEO)." Magnetic Resonance in Medicine (2020).
 
 4. PDF background field removal:
-Liu, Tian, et al. "A novel background field removal method for MRI using projection onto dipole fields." NMR in Biomedicine 24.9 (2011): 1129-1136.
+Liu T, et al. "A novel background field removal method for MRI using projection onto dipole fields." NMR in Biomedicine 24.9 (2011): 1129-1136.
 
 5. starQSM:
-Wei, Hongjiang, et al. "Streaking artifact reduction for quantitative susceptibility mapping of sources with large dynamic range." NMR in Biomedicine 28.10 (2015): 1294-1303.
+Wei H, et al. "Streaking artifact reduction for quantitative susceptibility mapping of sources with large dynamic range." NMR in Biomedicine 28.10 (2015): 1294-1303.
 

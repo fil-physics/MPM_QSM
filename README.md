@@ -31,7 +31,10 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 	https://github.com/kschan0214/sepia.git
 	and unzip it in chosen destination
 
-4. Set you local paths to MEDI and STI toolboxes downloaded in step 1 in file:
+4. Download SPM12:
+	https://www.fil.ion.ucl.ac.uk/spm/software/download/
+
+5. Set you local paths to MEDI and STI toolboxes downloaded in step 1 in file:
  	/your_path/sepia-master/SpecifyToolboxesDirectory.m
 
 	as following:
@@ -40,8 +43,8 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 	FANSI_dir = [];
 	SEGUE_dir = [];
 
-5. Add to your matlab path: SEPIA toolbox and MPM_QSM folder
-6. Edit MPM_QSM.m user parameters, where you specify folders to you nifti files
+6. Add to your matlab path: SEPIA toolbox, MPM_QSM folder and SPM12
+7. Edit MPM_QSM_caller.m user parameters, where you specify folders to you nifti files
 
 
 # Publications:

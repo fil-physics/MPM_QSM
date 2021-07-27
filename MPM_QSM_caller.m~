@@ -14,29 +14,31 @@
 % Please remember to give credit to the authors of the methods used:
 % 1. SEPIA toolbox:
 % Chan, K.-S., Marques, J.P., 2021. Neuroimage 227, 117611.
-% 2. complex fit of the phase:
+% 2. SPM12 - rigid body registration: 
+% Friston KJ, et al. Magnetic Resonance in Medicine 35 (1995):346-355
+% 3. complex fit of the phase:
 % Liu, Tian, et al. MRM 69.2 (2013): 467-476.
-% 3. ROMEO phase uwnrapping:
+% 4. ROMEO phase uwnrapping:
 % Dymerska, Barbara, and Eckstein, Korbinian et al. Magnetic Resonance in Medicine (2020).
-% 4. PDF background field removal:
+% 5. PDF background field removal:
 % Liu, Tian, et al. NMR in Biomed. 24.9 (2011): 1129-1136.
-% 5. starQSM:
+% 6. starQSM:
 % Wei, Hongjiang, et al. NMR in Biomed. 28.10 (2015): 1294-1303.
 
 %%% Inputs:
 % romeo_command          : path to romeo phase uwnrapping followed by romeo command, i.e. (in linux) '/your_path/bin/romeo' or (in windows) 'D:\your_path\bin\romeo'
 % B0                     : magnetic field strength, in Tesla
-% algorParam.qsm.method  : dipole inversion method, either 'Star-QSM' or 'ndi'
+% dipole_inv             : dipole inversion method, either 'Star-QSM' or 'ndi'
 %                          'ndi' - non-linear dipole inversion (also known as iterative Tikhonov), may give more contrast than Star-QSM but is less robust to noise
 %                          'Star-QSM' is very robust to noise and quick
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
 %%%% Inputs - directories, parameters and files specific to given contrast
-% mag_dir                : % folder with magnitude niftis
+% ATTENTION: ensure only niftis you want to use are in that folder
+% mag_dir                : % folder with magnitude niftis 
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
 % output_dir             : % output directory for a specific submeasurement from MPM
-% mag_file               : % magnitude reference nifti file for ROMEO unwrapping and masking
 
 
 %%% Outputs:
@@ -47,8 +49,8 @@
 % QSM_pdw_t1w_invrot_mean.nii  : mean QSM over PDw and T1w contrasts in image space
 
 %%%% final results - per contrast in subfolders in out_root_dir:
-% sepia_QSM.nii.gz          : QSM in scanner space
-% sepia_QSM_invrot.nii.gz   : QSM in image space
+% sepia_QSM.nii             : QSM in scanner space
+% sepia_QSM_invrot.nii      : QSM in image space
 
 %%%% additional outputs:
 % ph.nii                    : two volumes (odd and even) of fitted phase
@@ -73,36 +75,36 @@ para.B0 = 7;
 para.dipole_inv = 'Star-QSM' ;
 
 para.in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
-para.out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/BART_scan1'; 
+para.out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/BART_scan2'; 
 
 
 % directories, parameters and files specific to given contrast 
 % ensure they are in the right order (PDw, T1w, MTw) 
-% otherwise mean PDw+T1w QSM will be something different:
+% otherwise mean (QSM_PDw + QSM_T1w)/2 will be something different:
 for run = 1:3
-    
+    fprintf('run nr %i \n',run)
     switch run
         case 1 %PDw
-            para.mag_dir = 'pdw_mfc_3dflash_v1k_RR_0052' ; % folder with magnitude niftis
-            para.ph_dir = 'pdw_mfc_3dflash_v1k_RR_0052' ; % folder with phase inftis
+            para.mag_dir = 'pdw_mfc_3dflash_v1k_RR_0058' ; % folder with magnitude niftis
+            para.ph_dir = 'pdw_mfc_3dflash_v1k_RR_0059' ; % folder with phase inftis
             para.TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            para.output_dir = 'pdw_52_53' ; % output directory for a specific submeasurement from MPM
+            para.output_dir = 'pdw_58_59' ; % output directory for a specific submeasurement from MPM
             
         case 2 % T1w
-            para.mag_dir = 't1w_mfc_3dflash_v1k_RR_0050' ;
-            para.ph_dir = 't1w_mfc_3dflash_v1k_RR_0051' ;
+            para.mag_dir = 't1w_mfc_3dflash_v1k_RR_0056' ;
+            para.ph_dir = 't1w_mfc_3dflash_v1k_RR_0057' ;
             para.TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            para.output_dir = 't1w_50_51' ;
+            para.output_dir = 't1w_56_57' ;
             
         case 3 % MTw
-            para.mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0054' ;
-            para.ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0055' ;
+            para.mag_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0060' ;
+            para.ph_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0061' ;
             para.TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            para.output_dir = 'mtw_54_55' ;
+            para.output_dir = 'mtw_60_61' ;
  
     end
     
-    [QSM_all(:,:,:,run), QSM_all_invrot(:,:,:,run)] = MPM_QSM(para) ;
+    [QSM_V, QSM_all(:,:,:,run), QSMinvrot_V, QSM_all_invrot(:,:,:,run)] = MPM_QSM(para) ;
     
 end
 
@@ -114,15 +116,16 @@ QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
 QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
 
 
-QSM_V.fname = fullfile(out_root_dir,'QSM_pdw_t1w_mean.nii') ;
-spm_write_vol(QSM_V, QSM_pdw_t1w_mean)
-QSM_V.fname = fullfile(out_root_dir,'QSM_all_mean.nii') ;
-spm_write_vol(QSM_V, QSM_all_mean)
+QSM_V.fname = fullfile(para.out_root_dir,'QSM_pdw_t1w_mean.nii') ;
+spm_write_vol(QSM_V, QSM_pdw_t1w_mean) ;
+QSM_V.fname = fullfile(para.out_root_dir,'QSM_all_mean.nii') ;
+spm_write_vol(QSM_V, QSM_all_mean) ;
 
-QSMinvrot_V.fname = fullfile(out_root_dir,'QSM_pdw_t1w_invrot_mean.nii') ;
-spm_write_vol(QSMinvrot_V, QSM_pdw_t1w_invrot_mean)
-QSMinvrot_V.fname = fullfile(out_root_dir,'QSM_all_invrot_mean.nii') ;
-spm_write_vol(QSMinvrot_V, QSM_all_invrot_mean)
+
+QSMinvrot_V.fname = fullfile(para.out_root_dir,'QSM_pdw_t1w_invrot_mean.nii') ;
+spm_write_vol(QSMinvrot_V, QSM_pdw_t1w_invrot_mean) ;
+QSMinvrot_V.fname = fullfile(para.out_root_dir,'QSM_all_invrot_mean.nii') ;
+spm_write_vol(QSMinvrot_V, QSM_all_invrot_mean) ;
 
 
 sprintf('total processing finished after %s' , secs2hms(toc(totstart)))

@@ -14,29 +14,34 @@
 % Please remember to give credit to the authors of the methods used:
 % 1. SEPIA toolbox:
 % Chan, K.-S., Marques, J.P., 2021. Neuroimage 227, 117611.
-% 2. complex fit of the phase:
+% 2. SPM12 - rigid body registration: 
+% Friston KJ, et al. Magnetic Resonance in Medicine 35 (1995):346-355
+% 3. complex fit of the phase:
 % Liu, Tian, et al. MRM 69.2 (2013): 467-476.
-% 3. ROMEO phase uwnrapping:
+% 4. ROMEO phase uwnrapping:
 % Dymerska, Barbara, and Eckstein, Korbinian et al. Magnetic Resonance in Medicine (2020).
-% 4. PDF background field removal:
+% 5. PDF background field removal:
 % Liu, Tian, et al. NMR in Biomed. 24.9 (2011): 1129-1136.
-% 5. starQSM:
+% 6. starQSM:
 % Wei, Hongjiang, et al. NMR in Biomed. 28.10 (2015): 1294-1303.
 
 %%% Inputs:
 % romeo_command          : path to romeo phase uwnrapping followed by romeo command, i.e. (in linux) '/your_path/bin/romeo' or (in windows) 'D:\your_path\bin\romeo'
 % B0                     : magnetic field strength, in Tesla
-% algorParam.qsm.method  : dipole inversion method, either 'Star-QSM' or 'ndi'
-%                          'ndi' - non-linear dipole inversion (also known as iterative Tikhonov), may give more contrast than Star-QSM but is less robust to noise
-%                          'Star-QSM' is very robust to noise and quick
+% dipole_inv             : dipole inversion method, either 'Star-QSM' or 'ndi'
+%                          'ndi'      - non-linear dipole inversion 
+%                                       (also known as iterative Tikhonov), 
+%                                       may give more contrast than Star-QSM but is less robust to noise
+%                          'Star-QSM' - is very robust to noise and quick
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
 %%%% Inputs - directories, parameters and files specific to given contrast
-% mag_dir                : % folder with magnitude niftis
+% ATTENTION: ensure only niftis you want to use are in that folder, with
+% increasing echo numbering:
+% mag_dir                : % folder with magnitude niftis 
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
 % output_dir             : % output directory for a specific submeasurement from MPM
-% mag_file               : % magnitude reference nifti file for ROMEO unwrapping and masking
 
 
 %%% Outputs:
@@ -47,8 +52,8 @@
 % QSM_pdw_t1w_invrot_mean.nii  : mean QSM over PDw and T1w contrasts in image space
 
 %%%% final results - per contrast in subfolders in out_root_dir:
-% sepia_QSM.nii.gz          : QSM in scanner space
-% sepia_QSM_invrot.nii.gz   : QSM in image space
+% sepia_QSM.nii             : QSM in scanner space
+% sepia_QSM_invrot.nii      : QSM in image space
 
 %%%% additional outputs:
 % ph.nii                    : two volumes (odd and even) of fitted phase
@@ -66,7 +71,7 @@
 % @ UCL FIL Physics
 % last modifications 27/07/2021
 
-function [QSM , QSMinvrot] = MPM_QSM(para)
+function [QSM_V, QSM , QSMinvrot_V, QSMinvrot] = MPM_QSM(para)
 
 tstart = tic ;
 
@@ -181,9 +186,9 @@ tstart = tic ;
     clear FM
     img2scanner_mat = Maff_image\Maff_scanner ;
     FMrot = zeros(data_dim) ;
-    
-    for slice = 1 : data_dim(3)
-        FMrot(:,:,slice) = spm_slice_vol(FM_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim(1:2), -7) ;
+    data_dim_xy = data_dim(1:2);
+    parfor slice = 1 : data_dim(3)
+        FMrot(:,:,slice) = spm_slice_vol(FM_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     
     FMrot(isnan(FMrot)) = 0 ;
@@ -211,8 +216,9 @@ tstart = tic ;
     spm_write_vol(mask_V, qmask) ;
     clear qmask
     qmask_rot = zeros(data_dim) ;
-    for slice = 1 : data_dim(3)
-        qmask_rot(:,:,slice) = spm_slice_vol(mask_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim(1:2), -7) ;
+
+    parfor slice = 1 : data_dim(3)
+        qmask_rot(:,:,slice) = spm_slice_vol(mask_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     qmask_rot(isnan(qmask_rot)) = 0 ;
     mask_V.mat = Maff_scanner ;
@@ -285,8 +291,8 @@ tstart = tic ;
     scanner2img_mat = Maff_scanner\Maff_image ;
     QSMinvrot = zeros(data_dim) ;
     QSM_V = spm_vol('sepia_QSM.nii');
-    for slice = 1 : data_dim(3)
-        QSMinvrot(:,:,slice) = spm_slice_vol(QSM_V, scanner2img_mat*spm_matrix([0 0 slice]), data_dim(1:2), -7) ;
+    parfor slice = 1 : data_dim(3)
+        QSMinvrot(:,:,slice) = spm_slice_vol(QSM_V, scanner2img_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     
     QSMinvrot_V = FM_V ;
@@ -295,6 +301,7 @@ tstart = tic ;
     
     delete(sprintf('mag_TE%i.nii',size(TEs,2)));
     delete('sepia_mask-qsm.nii.gz')
+    delete('sepia_QSM.nii.gz')
     sprintf('finished after %s' , secs2hms(toc(tstart)))
 end
 

@@ -295,7 +295,7 @@ tstart = tic ;
     
     delete(sprintf('mag_TE%i.nii',size(TEs,2)));
     delete('sepia_mask-qsm.nii.gz')
-    sprintf('run %i finished after %s' ,run, secs2hms(toc(tstart)))
+    sprintf('finished after %s' , secs2hms(toc(tstart)))
 end
 
 

@@ -80,7 +80,7 @@ para.out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analys
 % ensure they are in the right order (PDw, T1w, MTw) 
 % otherwise mean PDw+T1w QSM will be something different:
 for run = 1:3
-    
+    fprintf('run nr %i \n',run)
     switch run
         case 1 %PDw
             para.mag_dir = 'pdw_mfc_3dflash_v1k_RR_0052' ; % folder with magnitude niftis

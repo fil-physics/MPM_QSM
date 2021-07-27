@@ -4,14 +4,15 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 
 # Main computational steps:
 
- 1) complex-fit over echoes for pdw and t1w images,
-    simple phase difference for mtw images
+ 1) complex-fit over echoes for PDw and T1w images,
+    simple phase difference for MTw images,
     for odd and even echoes done separately
  2) ROMEO phase unwrapping
  3) masking based on ROMEO quality map
- 4) rotation to scanner space for oblique acquisitions
- 5) PDF background field removal
- 6) star QSM for dipole inversion as default (optional: non-linear dipole inversion)
+ 4) rotation to scanner space for oblique acquisitions using SPM
+ 5) PDF background field removal within SEPIA toolbox
+ 6) star QSM for dipole inversion as default (optional: non-linear dipole inversion) within SEPIA toolbox
+ 7) rotation back of QSM results to image space (for comparisons with PD, R2*, R1 and MT maps) using SPM
 
 
 # Installation steps:
@@ -54,7 +55,10 @@ Please remember to give credit to the authors of the methods used:
 1. SEPIA toolbox:
 Chan, K.-S., Marques, J.P., 2021. SEPIA—Susceptibility mapping pipeline tool for phase images. Neuroimage 227, 117611.
 
-2. complex fit of the phase:
+2. SPM12 - rigid body registration:
+Friston KJ, Williams SR, Howard R Frackowiak RSJ and Turner R. Movement-related effect in fMRI time-series. Magnetic Resonance in Medicine 35 (1995):346-355
+
+4. complex fit of the phase:
 Liu, Tian, et al. "Nonlinear formulation of the magnetic field to source relationship for robust quantitative susceptibility mapping." Magnetic resonance in medicine 69.2 (2013): 467-476.
 
 3. ROMEO phase uwnrapping:

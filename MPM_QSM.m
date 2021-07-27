@@ -190,7 +190,7 @@ tstart = tic ;
     FMrot_V = FM_V ;
     FMrot_V.mat = Maff_scanner ;
     FMrot_V.fname = 'B0_rot.nii';
-    spm_write_vol(FMrot_V, FMrot)
+    spm_write_vol(FMrot_V, FMrot);
     
     %% creating mask for QSM calculation
     
@@ -291,7 +291,7 @@ tstart = tic ;
     
     QSMinvrot_V = FM_V ;
     QSMinvrot_V.fname = 'sepia_QSM_invrot.nii';
-    spm_write_vol(QSMinvrot_V, QSMinvrot)
+    spm_write_vol(QSMinvrot_V, QSMinvrot);
     
     delete(sprintf('mag_TE%i.nii',size(TEs,2)));
     delete('sepia_mask-qsm.nii.gz')

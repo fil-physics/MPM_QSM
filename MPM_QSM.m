@@ -64,7 +64,7 @@
 
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
-% last modifications 12/07/2021
+% last modifications 27/07/2021
 
 tstart = tic ;
 %%%%% USER PARAMETERS %%%%%
@@ -106,7 +106,9 @@ for run = 1:3
     
     
     %%%%% END OF USER PARAMETERS %%%%%
-    
+
+tstart = tic ;
+
     mag_fulldir = fullfile(in_root_dir, mag_dir) ;
     ph_fulldir = fullfile(in_root_dir, ph_dir) ;
     

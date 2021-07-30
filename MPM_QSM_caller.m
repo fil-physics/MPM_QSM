@@ -73,7 +73,7 @@
 
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
-% last modifications 27/07/2021
+% last modifications 30/07/2021
 totstart = tic ;
 %%%%% USER PARAMETERS %%%%%
 para.romeo_command = 'C:\wtcnapps\romeo_win_3.2.0\bin\romeo' ;

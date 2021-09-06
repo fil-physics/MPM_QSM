@@ -86,43 +86,42 @@ tstart = tic ;
     
     TEs = para.TEs/10^3 ;
     
-    ph_files = dir(ph_fulldir);
-    mag_files = dir(mag_fulldir);
+    ph_files = spm_select('FPList', ph_fulldir, '^.*\.(nii|img)$');
+    mag_files = spm_select('FPList', mag_fulldir, '^.*\.(nii|img)$');
     
     for t = 1:size(TEs,2)
         
-        ph_1tp = nifti(fullfile(ph_fulldir, ph_files(t+2).name));
+        ph_1tp = nifti(ph_files(t,:));
         ph(:,:,:,t) = ph_1tp.dat(:,:,:) ;
         
         if size(TEs,2) >= 6 % for mtw acquisition we cannot perform complex fit so we don't need magnitude data for each TE
             
-            mag_1tp = nifti(fullfile(mag_fulldir, mag_files(t+2).name)) ;
+            mag_1tp = nifti(mag_files(t,:));
             mag(:,:,:,t) = mag_1tp.dat(:,:,:) ;
             
         end
         
     end
     
-    
     % rescaling phase into [0,2*pi] phase range
     ph = 2*pi*single(ph - min(vector(ph)))/single(max(vector(ph))-min(vector(ph))) ;
     
     clear ph_V % otherwise if there is already this structure in memory it does not like it
-    ph_V(1) = spm_vol(fullfile(ph_fulldir, ph_files(3).name)) ;
+    ph_V(1) = spm_vol((ph_files(1,:))) ;
     ph_V(1).fname = 'ph.nii' ;
     ph_V(1).dt = [16 0] ;
-    ph_V(1).descript = '';
+    ph_V(1).descrip = '';
     ph_V(2) =  ph_V(1) ;
     ph_V(2).n = [2 1] ;
     
     clear mag_V % otherwise if there is already this structure in memory it does not like it
-    mag_V(1) = spm_vol(fullfile(mag_fulldir, mag_files(size(TEs,2)+2).name));
+    mag_V(1) = spm_vol(mag_files(end,:));
     mag_V(1).fname = sprintf('mag_TE%i.nii',size(TEs,2));
-    mag_V(1).descript = '';
-    mag_V(2) = mag_V(1) ;
-    mag_V(2).n = [2 1] ;
-    mag_ref = nifti(fullfile(mag_fulldir, mag_files(size(TEs,2)+2).name)) ;
-    mag_ref = repmat(mag_ref.dat(:,:,:),[1 1 1 2]) ;
+    mag_V(1).descrip = '';
+    mag_V(2) = mag_V(1);
+    mag_V(2).n = [2 1];
+    mag_ref = nifti(mag_files(end,:));
+    mag_ref = repmat(mag_ref.dat(:,:,:),[1 1 1 2]);
     for read_dir = 1:2
         
         if size(TEs,2) < 6 % complex fit is only possible if at least 3 echoes per readout direction available
@@ -187,7 +186,8 @@ tstart = tic ;
     img2scanner_mat = Maff_image\Maff_scanner ;
     FMrot = zeros(data_dim) ;
     data_dim_xy = data_dim(1:2);
-    parfor slice = 1 : data_dim(3)
+    
+    for slice = 1 : data_dim(3)
         FMrot(:,:,slice) = spm_slice_vol(FM_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     
@@ -217,7 +217,7 @@ tstart = tic ;
     clear qmask
     qmask_rot = zeros(data_dim) ;
 
-    parfor slice = 1 : data_dim(3)
+    for slice = 1 : data_dim(3)
         qmask_rot(:,:,slice) = spm_slice_vol(mask_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     qmask_rot(isnan(qmask_rot)) = 0 ;
@@ -291,7 +291,7 @@ tstart = tic ;
     scanner2img_mat = Maff_scanner\Maff_image ;
     QSMinvrot = zeros(data_dim) ;
     QSM_V = spm_vol('sepia_QSM.nii');
-    parfor slice = 1 : data_dim(3)
+    for slice = 1 : data_dim(3)
         QSMinvrot(:,:,slice) = spm_slice_vol(QSM_V, scanner2img_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     

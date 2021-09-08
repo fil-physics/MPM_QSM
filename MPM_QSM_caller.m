@@ -46,7 +46,7 @@
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
 % output_dir             : % output directory for a specific submeasurement from MPM
-
+% calc_mean_qsm          : % 'yes' or 'no' , if 'yes' it calculates mean QSM from all contrasts
 
 %%% Outputs:
 %%%% combined final results in out_root_dir:
@@ -76,38 +76,39 @@
 % last modifications 30/07/2021
 totstart = tic ;
 %%%%% USER PARAMETERS %%%%%
-para.romeo_command = 'C:\wtcnapps\romeo_win_3.2.0\bin\romeo' ;
-para.in_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210714.M700213_FIL_analysis' ;
-para.out_root_dir = 'D:\Users\bdymerska\data\7T\2021\20210714.M700213_FIL_analysis\SEPIA\BART_scan2';
+para.romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
 
 para.B0 = 7;
 para.dipole_inv = 'Star-QSM' ;
-calc_mean_qsm = 'yes' ;
 
-% directories, parameters and files specific to given contrast
-% ensure they are in the right order (PDw, T1w, MTw)
+para.in_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis' ;
+para.out_root_dir = '/media/barbara/hdd2/DATA/FIL/7T/20210623.M700198_FIL_analysis/SEPIA/MORSE_scan2_mfc'; 
+calc_mean_qsm = 'yes' ; 
+
+% directories, parameters and files specific to given contrast 
+% ensure they are in the right order (PDw, T1w, MTw) 
 % otherwise mean PDw+T1w QSM will be something different:
 for run = 1:3
     
     switch run
         case 1 %PDw
-            para.mag_dir = 'pdw_mfc_3dflash_v1k_RR_0066' ; % folder with magnitude niftis
-            para.ph_dir = 'pdw_mfc_3dflash_v1k_RR_0067' ; % folder with phase inftis
+            para.mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; % folder with magnitude niftis
+            para.ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; % folder with phase inftis
             para.TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            para.output_dir = 'pdw_66_67' ; % output directory for a specific submeasurement from MPM
+            para.output_dir = 'pdw_25_26' ; % output directory for a specific submeasurement from MPM
             
         case 2 % T1w
-            para.mag_dir = 't1w_mfc_3dflash_v1k_RR_0064' ;
-            para.ph_dir = 't1w_mfc_3dflash_v1k_RR_0065' ;
+            para.mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
+            para.ph_dir = 't1w_mfc_3dflash_v1k_0023' ;
             para.TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            para.output_dir = 't1w_64_65' ;
+            para.output_dir = 't1w_22_23' ;
             
         case 3 % MTw
-            para.mag_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0068' ;
-            para.ph_dir = 'mtw_mfc_3dflash_v1k_180deg_RR_0069' ;
+            para.mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0031' ;
+            para.ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0032' ;
             para.TEs = [2.2 4.58 6.96 9.34] ; % echo time in ms
-            para.output_dir = 'mtw_68_69' ;
-            
+            para.output_dir = 'mtw_31_32' ;
+ 
     end
     %%%%% END OF USER PARAMETERS %%%%%
     [QSM_V, QSM_all(:,:,:,run), QSMinvrot_V, QSM_all_invrot(:,:,:,run)] = MPM_QSM(para) ;

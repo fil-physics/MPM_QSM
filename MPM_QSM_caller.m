@@ -76,7 +76,7 @@
 % last modifications 30/07/2021
 totstart = tic ;
 %%%%% USER PARAMETERS %%%%%
-para.romeo_command = '~/Documents/MRI_software/ROMEO/romeo_linux_3.2.0/bin/romeo' ;
+para.romeo_command = '/your_path/romeo_linux_3.2.0/bin/romeo' ;
 
 para.B0 = 7;
 para.dipole_inv = 'Star-QSM' ;

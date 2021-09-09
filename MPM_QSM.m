@@ -14,7 +14,7 @@
 % Please remember to give credit to the authors of the methods used:
 % 1. SEPIA toolbox:
 % Chan, K.-S., Marques, J.P., 2021. Neuroimage 227, 117611.
-% 2. SPM12 - rigid body registration: 
+% 2. SPM12 - rigid body registration:
 % Friston KJ, et al. Magnetic Resonance in Medicine 35 (1995):346-355
 % 3. complex fit of the phase:
 % Liu, Tian, et al. MRM 69.2 (2013): 467-476.
@@ -27,22 +27,25 @@
 
 %%% Inputs:
 % romeo_command          : path to romeo phase uwnrapping followed by romeo command, i.e. (in linux) '/your_path/bin/romeo' or (in windows) 'D:\your_path\bin\romeo'
-% B0                     : magnetic field strength, in Tesla
-% dipole_inv             : dipole inversion method, either 'Star-QSM' or 'ndi'
-%                          'ndi'      - non-linear dipole inversion 
-%                                       (also known as iterative Tikhonov), 
-%                                       may give more contrast than Star-QSM but is less robust to noise
-%                          'Star-QSM' - is very robust to noise and quick
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
+% B0                     : magnetic field strength, in Tesla
+% dipole_inv             : dipole inversion method, either 'Star-QSM' or 'ndi'
+%                          'ndi'      - non-linear dipole inversion
+%                                       (also known as iterative Tikhonov),
+%                                       may give more contrast than Star-QSM but is less robust to noise
+%                          'Star-QSM' - is very robust to noise and quick
+% calc_mean_qsm          : 'yes' or 'no', if 'yes' mean QSM from the three
+%                           MPM acquisitions will be calculated, ATTENTION: currently nor
+%                           coregistration between the scans is implemented
+
 %%%% Inputs - directories, parameters and files specific to given contrast
-% ATTENTION: ensure only niftis you want to use are in that folder, with
-% increasing echo numbering:
-% mag_dir                : % folder with magnitude niftis 
+% ATTENTION: ensure only niftis you want to use are in that folder, with increasing echo numbering:
+% mag_dir                : % folder with magnitude niftis
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
-% output_dir             : % output directory for a specific submeasurement from MPM
-
+% output_dir             : % output QSM directory for a specific MPM contrast
+% calc_mean_qsm          : % 'yes' or 'no' , if 'yes' it calculates mean QSM from all contrasts
 
 %%% Outputs:
 %%%% combined final results in out_root_dir:
@@ -69,7 +72,7 @@
 
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
-% last modifications 27/07/2021
+% last modifications 09/09/2021
 
 function [QSM_V, QSM , QSMinvrot_V, QSMinvrot] = MPM_QSM(para)
 

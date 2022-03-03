@@ -30,6 +30,7 @@
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
 % B0                     : magnetic field strength, in Tesla
+% B0_dir                 : main magnetic field direction after reslicing the data as a vector, e.g. [0; 1; 0]
 % dipole_inv             : dipole inversion method, either 'Star-QSM' or 'ndi'
 %                          'ndi'      - non-linear dipole inversion
 %                                       (also known as iterative Tikhonov),
@@ -40,11 +41,12 @@
 %                           coregistration between the scans is implemented
 
 %%%% Inputs - directories, parameters and files specific to given contrast
-% ATTENTION: ensure only niftis you want to use are in that folder, with increasing echo numbering:
+% ATTENTION: ensure only niftis you want to use are in that folder, with
+% increasing echo numbering:
 % mag_dir                : % folder with magnitude niftis
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
-% output_dir             : % output QSM directory for a specific MPM contrast
+% output_dir             : % output directory for a specific submeasurement from MPM
 % calc_mean_qsm          : % 'yes' or 'no' , if 'yes' it calculates mean QSM from all contrasts
 
 %%% Outputs:
@@ -72,7 +74,6 @@
 
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
-% last modifications 09/09/2021
 
 function [QSM_V, QSM , QSMinvrot_V, QSMinvrot] = MPM_QSM(para)
 
@@ -101,11 +102,12 @@ tstart = tic ;
             
             mag_1tp = nifti(mag_files(t,:));
             mag(:,:,:,t) = mag_1tp.dat(:,:,:) ;
-            
+           
         end
         
     end
-    
+    ph(~isfinite(ph)) = 0 ;
+
     % rescaling phase into [0,2*pi] phase range
     ph = 2*pi*single(ph - min(vector(ph)))/single(max(vector(ph))-min(vector(ph))) ;
     
@@ -125,6 +127,11 @@ tstart = tic ;
     mag_V(2).n = [2 1];
     mag_ref = nifti(mag_files(end,:));
     mag_ref = repmat(mag_ref.dat(:,:,:),[1 1 1 2]);
+    mag_ref(~isfinite(mag_ref)) = 0 ;
+
+
+    data_dim = size(ph_1tp.dat) ;
+
     for read_dir = 1:2
         
         if size(TEs,2) < 6 % complex fit is only possible if at least 3 echoes per readout direction available
@@ -132,6 +139,7 @@ tstart = tic ;
             FM(:,:,:,read_dir) = angle(exp(1i*(ph(:,:,:,read_dir+2)-ph(:,:,:,read_dir)))) ;
         else
             disp('complex fitting phase')
+            mag(~isfinite(mag)) = 0 ;
             compl = single(mag).*exp(-1i*ph);
             [FM_1, ~, ~, ~] = Fit_ppm_complex_TE(compl(:,:,:,read_dir:2:end),TEs(read_dir:2:end));
             FM(:,:,:,read_dir) = FM_1 ;
@@ -141,7 +149,7 @@ tstart = tic ;
         spm_write_vol(mag_V(read_dir), mag_ref(:,:,:,read_dir)) ;
         
     end
-    clear mag ph FM mag_ref
+    clear mag ph FM_nifti mag_ref FM
     
     
     disp('phase unwrapping with ROMEO and:')
@@ -152,9 +160,9 @@ tstart = tic ;
     [~, FM_name,~] = fileparts(ph_V(1).fname) ;
     FM_romeo_file = sprintf('%s_romeo.nii',FM_name) ;
     if isunix
-        status =  unix(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', para.romeo_command, ph_V(1).fname, mag_V(1).fname, FM_romeo_file, TE, TE)) ;
+        status =  unix(sprintf('%s -p "%s" -m "%s" -o "%s" -t [%i,%i] -k nomask -g -q -B', para.romeo_command, ph_V(1).fname, mag_V(1).fname, FM_romeo_file, TE, TE)) ;
     elseif ispc
-        status = system(sprintf('%s %s -m %s -o %s -t [%i,%i] -k nomask -g -q -B', para.romeo_command, ph_V(1).fname, mag_V(1).fname, FM_romeo_file, TE, TE)) ;
+        status = system(sprintf('%s -p "%s" -m "%s" -o "%s" -t [%i,%i] -k nomask -g -q -B', para.romeo_command, ph_V(1).fname, mag_V(1).fname, FM_romeo_file, TE, TE)) ;
     end
     if status == 1
         error('ROMEO did not run properly - check your installation path')
@@ -165,48 +173,41 @@ tstart = tic ;
     %% field map rotation to scanner space
     % defining affine matrix in scanner space for data rotation to scanner
     % space with mantaining the same image origin (i.e. no translation)
-    
-    data_dim = size(ph_1tp.dat) ;
     Z = spm_imatrix(ph_1tp.mat) ;
     pixdim = Z(7:9);
     
     Maff_image = ph_1tp.mat ;
     O = Maff_image\[0 0 0 1]' ;
     O = O(1:3)' ;
-    
+
     Maff_scanner(1,:) = [0 0 pixdim(3) -pixdim(3)*O(3)] ;
     Maff_scanner(2,:) = [pixdim(1) 0 0 -pixdim(1)*O(1)] ;
     Maff_scanner(3,:) = [0 pixdim(2) 0 -pixdim(2)*O(2)] ;
     Maff_scanner(4,:) = [0 0 0 1] ;
-    
-    
-    FM = nifti('B0.nii') ;
-    fm_data = FM.dat(:,:,:) ;
-    fm_data(isnan(fm_data)) = 0 ;
+
     FM_V = spm_vol('B0.nii');
-    spm_write_vol(FM_V, fm_data) ;
-    clear FM
     img2scanner_mat = Maff_image\Maff_scanner ;
-    FMrot = zeros(data_dim) ;
+    fm_rot = zeros(data_dim) ;
     data_dim_xy = data_dim(1:2);
     
     for slice = 1 : data_dim(3)
-        FMrot(:,:,slice) = spm_slice_vol(FM_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
+        fm_rot(:,:,slice) = spm_slice_vol(FM_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     
-    FMrot(isnan(FMrot)) = 0 ;
-    FMrot_V = FM_V ;
-    FMrot_V.mat = Maff_scanner ;
-    FMrot_V.fname = 'B0_rot.nii';
-    spm_write_vol(FMrot_V, FMrot);
-    
+    FM_nifti = nifti('B0.nii') ;
+    fm_rot(~isfinite(fm_rot)) = 0 ;
+    FMrot_nifti = FM_nifti ;
+    FMrot_nifti.dat.fname = 'B0_rot.nii';
+    create(FMrot_nifti)
+    FMrot_nifti.dat(:,:,:) = fm_rot ;
+    FMrot_nifti.mat = Maff_scanner ;
+    clear fm_data fm_rot FMrot_nifti FM_nifti
     %% creating mask for QSM calculation
     
     disp('quality masking')
-    qmask = nifti('quality.nii') ;
-    mask_V = spm_vol('quality.nii') ;
-    qmask = qmask.dat(:,:,:) ;
-    qmask(isnan(qmask)) = 0 ;
+    qmask_nifti = nifti('quality.nii') ;
+    qmask = qmask_nifti.dat(:,:,:) ;
+    qmask(~isfinite(qmask)) = 0 ;
     qmask(qmask>0.3) = 1 ;
     qmask(qmask<=0.3) = 0 ;
     qmask = imfill(qmask,6,'holes') ;
@@ -214,29 +215,33 @@ tstart = tic ;
     qmask(qmask>0.6) = 1 ;
     qmask(qmask<=0.6) = 0 ;
     qmask = int16(qmask) ;
-    mask_V.dt = [spm_type('int16') 0] ;
-    mask_V.fname = 'mask.nii' ;
-    spm_write_vol(mask_V, qmask) ;
-    clear qmask
-    qmask_rot = zeros(data_dim) ;
+    mask_nifti = qmask_nifti ;
+    mask_nifti.dat.fname = 'mask.nii' ;
+    mask_nifti.dat.dtype = 'INT16-LE' ;
+    create(mask_nifti)
+    mask_nifti.dat(:,:,:) = qmask ;
+    mask_V = spm_vol('mask.nii') ;
+    mask_rot = zeros(data_dim) ;
 
     for slice = 1 : data_dim(3)
-        qmask_rot(:,:,slice) = spm_slice_vol(mask_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
+        mask_rot(:,:,slice) = spm_slice_vol(mask_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
-    qmask_rot(isnan(qmask_rot)) = 0 ;
-    mask_V.mat = Maff_scanner ;
-    mask_V.fname = 'mask_rot.nii';
-    spm_write_vol(mask_V, qmask_rot) ;
+    mask_rot(~isfinite(mask_rot)) = 0 ;
+
+    mask_rot_nifti = mask_nifti ;
+    mask_rot_nifti.dat.fname = 'mask_rot.nii';
+    create(mask_rot_nifti)
+    mask_rot_nifti.dat(:,:,:) = int16(mask_rot) ;
+    mask_rot_nifti.mat = Maff_scanner ;
     
-    
-    
+    clear qmask qmask_nifti mask_V mask_nifti mask_rot mask_rot_nifti
     %% SEPIA - background field removal and dipole inversion yielding final QSM
     
     disp('creating SEPIA header')
     B0 = para.B0 ;
     CF = B0*42.58*1e6;	% imaging frequency, in Hz (B0*gyromagnetic_ratio*1e6)
     delta_TE = 1;	    % echo spacing, in second - we have already combined data, in such situation set to 1
-    B0_dir = [0;1;0];	% main magnetic field direction, it's always [0,1,0] because the images are resliced so that 2nd dimension is aligned with B0
+    B0_dir = para.B0_dir;	% main magnetic field direction
     matrixSize = data_dim ;	    % image matrix size
     voxelSize = pixdim ;	% spatial resolution of the data, in mm
     header_fullfile = fullfile(output_fulldir, 'header_sepia.mat') ;
@@ -301,10 +306,14 @@ tstart = tic ;
     QSMinvrot_V = FM_V ;
     QSMinvrot_V.fname = 'sepia_QSM_invrot.nii';
     spm_write_vol(QSMinvrot_V, QSMinvrot);
-    
+
     delete(sprintf('mag_TE%i.nii',size(TEs,2)));
-    delete('sepia_mask-qsm.nii.gz')
-    delete('sepia_QSM.nii.gz')
+    delete('sepia_mask-qsm.nii.gz');
+    if strcmp(para.data_cleanup, 'small')
+        delete 'sepia_QSM.nii.gz' 'mask.nii' 'mask_rot.nii' 'ph.nii' 'ph_romeo.nii' 'quality.nii' 'sepia_local-field.nii.gz'
+    elseif strcmp(para.data_cleanup, 'big')
+        delete 'sepia_QSM.nii.gz' 'mask.nii' 'mask_rot.nii' 'ph.nii' 'ph_romeo.nii' 'quality.nii' 'sepia_local-field.nii.gz' 'B0.nii' 'B0_rot.nii'
+    end
     sprintf('finished after %s' , secs2hms(toc(tstart)))
 end
 

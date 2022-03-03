@@ -30,6 +30,7 @@
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
 % B0                     : magnetic field strength, in Tesla
+% B0_dir                 : main magnetic field direction after reslicing the data as a vector, e.g. [0; 1; 0]
 % dipole_inv             : dipole inversion method, either 'Star-QSM' or 'ndi'
 %                          'ndi'      - non-linear dipole inversion
 %                                       (also known as iterative Tikhonov),
@@ -40,11 +41,12 @@
 %                           coregistration between the scans is implemented
 
 %%%% Inputs - directories, parameters and files specific to given contrast
-% ATTENTION: ensure only niftis you want to use are in that folder, with increasing echo numbering:
+% ATTENTION: ensure only niftis you want to use are in that folder, with
+% increasing echo numbering:
 % mag_dir                : % folder with magnitude niftis
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
-% output_dir             : % output QSM directory for a specific MPM contrast
+% output_dir             : % output directory for a specific submeasurement from MPM
 % calc_mean_qsm          : % 'yes' or 'no' , if 'yes' it calculates mean QSM from all contrasts
 
 %%% Outputs:
@@ -72,48 +74,47 @@
 
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
-% last modifications 09/09/2021
 
 totstart = tic ;
-
 %%%%% USER PARAMETERS %%%%%
-para.romeo_command = '/your_path/romeo_linux_3.2.0/bin/romeo' ;
-para.in_root_dir = '/your/root/path' ;
-para.out_root_dir = '/your/output/path';
+para.romeo_command = '/usr/local/bin/romeo' ;
+para.in_root_dir = '/home/bdymerska/Documents/data/7T/2021/Christian_Lambert/' ;
+para.out_root_dir =  para.in_root_dir ;
 
-para.B0 = 7;
+para.B0 = 3;
+para.B0_dir = [0;1;0];	% main magnetic field direction after reslicing the data
 para.dipole_inv = 'Star-QSM' ;
+
+para.data_cleanup = 'big' ; % 'small' leaves B0 maps and QSMs, 'big' leaves only QSMs
 
 calc_mean_qsm = 'yes' ; 
 
 % directories, parameters and files specific to given contrast 
 % ensure they are in the right order (PDw, T1w, MTw) 
-% otherwise mean PDw+T1w QSM will be something different when calc_mean_qsm = 'yes':
+% otherwise mean PDw+T1w QSM will be something different:
 for run = 1:3
     
     switch run
-        case 1 %PDw
-            para.mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; % folder with magnitude niftis
-            para.ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; % folder with phase inftis
-            para.TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            para.output_dir = 'pdw_25_26' ; % output QSM directory for a specific MPM contrast
+        case 1 
+            para.mag_dir = '181123_095801_pdw_mfc_xpc_3dflash_v1d/magnitude/' ; % folder with magnitude niftis
+            para.ph_dir = '181123_095801_pdw_mfc_xpc_3dflash_v1d/phase/' ; % folder with phase inftis
+            para.TEs = [2.3000000e-03   4.6000000e-03   6.9000000e-03   9.2000000e-03   1.1500000e-02   1.3800000e-02   1.6100000e-02   1.8400000e-02]*1000 ; % echo time in ms
+            para.output_dir = 'QSM_pdw' ; % output directory for a specific submeasurement from MPM
             
-        case 2 % T1w
-            para.mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
-            para.ph_dir = 't1w_mfc_3dflash_v1k_0023' ;
-            para.TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            para.output_dir = 't1w_22_23' ;
+        case 2 
+            para.mag_dir = '181123_095026_t1w_mfc_xpc_3dflash_v1d/magnitude/' ;
+            para.ph_dir = '181123_095026_t1w_mfc_xpc_3dflash_v1d/phase/' ;
+            para.TEs = [2.3000000e-03   4.6000000e-03   6.9000000e-03   9.2000000e-03   1.1500000e-02   1.3800000e-02   1.6100000e-02   1.8400000e-02]*1000 ;
+            para.output_dir = 'QSM_t1w' ;
             
-        case 3 % MTw
-            para.mag_dir = 'mtw_mfc_3dflash_v1k_180deg_0031' ;
-            para.ph_dir = 'mtw_mfc_3dflash_v1k_180deg_0032' ;
-            para.TEs = [2.2 4.58 6.96 9.34] ; 
-            para.output_dir = 'mtw_31_32' ;
+        case 3 
+            para.mag_dir = '181123_100527_mtw_mfc_xpc_3dflash_v1d/magnitude/' ;
+            para.ph_dir = '181123_100527_mtw_mfc_xpc_3dflash_v1d/phase/' ;
+            para.TEs = [2.3000000e-03   4.6000000e-03   6.9000000e-03   9.2000000e-03   1.1500000e-02   1.3800000e-02]*1000 ; % echo time in ms
+            para.output_dir = 'QSM_mtw' ;
  
     end
     %%%%% END OF USER PARAMETERS %%%%%
-    
-    
     [QSM_V, QSM_all(:,:,:,run), QSMinvrot_V, QSM_all_invrot(:,:,:,run)] = MPM_QSM(para) ;
     
 end
@@ -141,4 +142,6 @@ if strcmp(calc_mean_qsm, 'yes')
     spm_write_vol(QSMinvrot_V, QSM_all_invrot_mean) ;
 end
 
+
 sprintf('total processing finished after %s' , secs2hms(toc(totstart)))
+clear all

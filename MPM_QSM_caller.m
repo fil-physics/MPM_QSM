@@ -77,9 +77,9 @@
 
 totstart = tic ;
 %%%%% USER PARAMETERS %%%%%
-para.romeo_command = '/usr/local/bin/romeo' ;
-para.in_root_dir = '/home/bdymerska/Documents/data/7T/2021/Christian_Lambert/' ;
-para.out_root_dir =  para.in_root_dir ;
+para.romeo_command = '/your_path/romeo_linux_3.2.0/bin/romeo' ;
+para.in_root_dir = '/your/root/path/' ;
+para.out_root_dir =   '/your/output/path/' ;
 
 para.B0 = 3;
 para.B0_dir = [0;1;0];	% main magnetic field direction after reslicing the data
@@ -95,22 +95,22 @@ calc_mean_qsm = 'yes' ;
 for run = 1:3
     
     switch run
-        case 1 
-            para.mag_dir = '181123_095801_pdw_mfc_xpc_3dflash_v1d/magnitude/' ; % folder with magnitude niftis
-            para.ph_dir = '181123_095801_pdw_mfc_xpc_3dflash_v1d/phase/' ; % folder with phase inftis
-            para.TEs = [2.3000000e-03   4.6000000e-03   6.9000000e-03   9.2000000e-03   1.1500000e-02   1.3800000e-02   1.6100000e-02   1.8400000e-02]*1000 ; % echo time in ms
+        case 1 % PDw
+            para.mag_dir = 'magnitude_folder/' ; % folder with magnitude niftis
+            para.ph_dir = 'phase_folder/' ; % folder with phase inftis
+            para.TEs = [2.3    4.6    6.9    9.2   11.5   13.8   16.1   18.4] ; % echo time in ms
             para.output_dir = 'QSM_pdw' ; % output directory for a specific submeasurement from MPM
             
-        case 2 
-            para.mag_dir = '181123_095026_t1w_mfc_xpc_3dflash_v1d/magnitude/' ;
-            para.ph_dir = '181123_095026_t1w_mfc_xpc_3dflash_v1d/phase/' ;
-            para.TEs = [2.3000000e-03   4.6000000e-03   6.9000000e-03   9.2000000e-03   1.1500000e-02   1.3800000e-02   1.6100000e-02   1.8400000e-02]*1000 ;
+        case 2 % T1w
+            para.mag_dir = 'magnitude_folder/' ;
+            para.ph_dir = 'phase_folder/' ;
+            para.TEs = [2.3    4.6    6.9    9.2   11.5   13.8   16.1   18.4] ;
             para.output_dir = 'QSM_t1w' ;
             
-        case 3 
-            para.mag_dir = '181123_100527_mtw_mfc_xpc_3dflash_v1d/magnitude/' ;
-            para.ph_dir = '181123_100527_mtw_mfc_xpc_3dflash_v1d/phase/' ;
-            para.TEs = [2.3000000e-03   4.6000000e-03   6.9000000e-03   9.2000000e-03   1.1500000e-02   1.3800000e-02]*1000 ; % echo time in ms
+        case 3 % MTw
+            para.mag_dir = 'magnitude_folder/' ;
+            para.ph_dir = 'phase_folder/' ;
+            para.TEs = [2.3    4.6    6.9    9.2   11.5   13.8   16.1   18.4] ; 
             para.output_dir = 'QSM_mtw' ;
  
     end

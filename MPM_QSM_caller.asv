@@ -72,19 +72,20 @@
 
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
+% last modifications 09/09/2021
 
 totstart = tic ;
 
 %%%%% USER PARAMETERS %%%%%
-para.romeo_command = '/your_path/romeo_linux_3.2.0/bin/romeo' ;
-para.in_root_dir = '/your/root/path/' ;
-para.out_root_dir =   '/your/output/path/' ;
+para.romeo_command = 'romeo' ;
+para.in_root_dir = '/home/bdymerska/Documents/data/3T/2021/MP03161_20210630/morse_offsetcorr/integrated/sense4_Neop6' ;
+para.out_root_dir =   fullfile(para.in_root_dir, 'QSM_offsetcorr') ;
 
 para.B0 = 3;
 para.B0_dir = [0;1;0];	% main magnetic field direction after reslicing the data
 para.dipole_inv = 'Star-QSM' ;
 
-para.data_cleanup = 'big' ; % 'small' leaves B0 maps and QSMs, 'big' leaves only QSMs
+para.data_cleanup = 'no' ; % 'small' leaves B0 maps and QSMs, 'big' leaves only QSMs
 
 calc_mean_qsm = 'no' ; 
 
@@ -99,21 +100,21 @@ for run = 1:3
             para.ph_dir = 'pdw/ph/' ; % folder with phase inftis
             para.TEs =  2.3*[1 2 3 4 5 6 7 8] ;  % echo time in ms
             para.output_dir = 'QSM_pdw' ; % output directory for a specific submeasurement from MPM
-            para.mask_thr = 0.15 ; % larger threshold smaller mask
+            para.mask_thr = 0.2 ; % larger threshold smaller mask
             
         case 2 % T1w
             para.mag_dir = 't1w/mag/' ;
             para.ph_dir = 't1w/ph/' ;
             para.TEs = 2.3*[1 2 3 4 5 6 7 8] ;  ;
             para.output_dir = 'QSM_t1w' ;
-            para.mask_thr = 0.1 ; % larger threshold smaller mask
+            para.mask_thr = 0.2 ; % larger threshold smaller mask
             
         case 3 % MTw
             para.mag_dir = 'mtw/mag/' ;
             para.ph_dir = 'mtw/ph/' ;
-            para.TEs = 2.3*[1 2 3 4 5 6] ; 
+            para.TEs = [2.2    4.58    6.96    9.34] ; 
             para.output_dir = 'QSM_mtw' ;
-            para.mask_thr = 0.1 ; % larger threshold smaller mask
+            para.mask_thr = 0.2 ; % larger threshold smaller mask
  
     end
     %%%%% END OF USER PARAMETERS %%%%%

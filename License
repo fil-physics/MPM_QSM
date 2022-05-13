@@ -13,5 +13,5 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-This software is not for clinical use.
+This software is for academic research purpose only. Commercial or clinical use is not permitted.
 Dependencies such as SEPIA toolbox and SPM12 have their own licenses. Please see README.md file for details about the dependencies.

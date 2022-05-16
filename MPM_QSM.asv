@@ -254,12 +254,14 @@ tstart = tic ;
     QSMinvrot_V.fname = 'sepia_QSM_invrot.nii';
     spm_write_vol(QSMinvrot_V, QSMinvrot);
     
-    delete sepia_mask-qsm.nii.gz sepia_QSM.nii.gz
-    if strcmp(para.data_cleanup,'small') || strcmp(para.data_cleanup,'big')
-        delete mag.nii corrected_phase.nii mask.nii mask_rot.nii ph.nii ph_romeo.nii quality.nii sepia_local-field.nii.gz
+    delete(sprintf('mag_TE%i.nii',size(TEs,2)));
+    delete 'sepia_mask-qsm.nii.gz' 'sepia_QSM.nii.gz'
+    if strcmp(para.data_cleanup,'small')
+delete 'mag.nii' 'corrected_phase.nii' 
+
     end
     if strcmp(para.data_cleanup,'big')
-        delete B0.nii B0_rot.nii
+
     end
     sprintf('finished after %s' , secs2hms(toc(tstart)))
 end

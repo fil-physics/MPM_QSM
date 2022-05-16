@@ -19,7 +19,7 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 
 1. Download Zip with all the files from:
 
-	https://github.com/baskadym/MPM_QSM.git
+	https://github.com/fil-physics/MPM_QSM
 	or clone it to your GitHub repository
 
 2. Download compiled version of ROMEO either for windows or linux:

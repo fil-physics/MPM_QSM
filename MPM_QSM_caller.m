@@ -35,9 +35,6 @@
 %                                       (also known as iterative Tikhonov),
 %                                       may give more contrast than Star-QSM but is less robust to noise
 %                          'Star-QSM' - is very robust to noise and quick
-% calc_mean_qsm          : 'yes' or 'no', if 'yes' mean QSM from the three
-%                           MPM acquisitions will be calculated, ATTENTION: currently nor
-%                           coregistration between the scans is implemented
 
 %%%% Inputs - directories, parameters and files specific to given contrast
 % ATTENTION: ensure only niftis you want to use are in that folder, with increasing echo numbering:
@@ -76,9 +73,9 @@
 totstart = tic ;
 
 %%%%% USER PARAMETERS %%%%%
-para.romeo_command = 'romeo' ;
-para.in_root_dir = '/home/bdymerska/Documents/data/3T/2018/20181221.MP02521_FIL_calcification/morse_offsetcorr_sense4' ;
-para.out_root_dir =   para.in_root_dir ;
+para.romeo_command = '/your_path/romeo_linux_3.2.0/bin/romeo' ;
+para.in_root_dir = '/your/root/path' ;
+para.out_root_dir =   '/your/output/path';
 
 para.B0 = 3;
 para.B0_dir = [0;1;0];	% main magnetic field direction after reslicing the data
@@ -86,11 +83,6 @@ para.dipole_inv = 'Star-QSM' ;
 
 para.data_cleanup = 'big' ; % 'small' leaves B0 maps and QSMs, 'big' leaves only QSMs
 
-calc_mean_qsm = 'no' ; 
-
-% directories, parameters and files specific to given contrast 
-% ensure they are in the right order (PDw, T1w, MTw) 
-% otherwise mean PDw+T1w QSM will be something different:
 for run = 1:3
     
     switch run
@@ -98,54 +90,28 @@ for run = 1:3
             para.mag_dir = 'pdw/mag/' ; % folder with magnitude niftis
             para.ph_dir = 'pdw/ph/' ; % folder with phase inftis
             para.TEs =  2.3*[1 2 3 4 5 6 7 8] ;  % echo time in ms
-            para.output_dir = 'QSM_pdw_pass2' ; % output directory for a specific submeasurement from MPM
-            para.mask_thr = 0.25 ; % larger threshold smaller mask
+            para.output_dir = 'QSM_pdw' ; % output directory for a specific submeasurement from MPM
+            para.mask_thr = 0.15 ; % larger threshold smaller mask
             
         case 2 % T1w
             para.mag_dir = 't1w/mag/' ;
             para.ph_dir = 't1w/ph/' ;
             para.TEs = 2.3*[1 2 3 4 5 6 7 8] ;
-            para.output_dir = 'QSM_t1w_pass2' ;
-            para.mask_thr = 0.25 ; % larger threshold smaller mask
+            para.output_dir = 'QSM_t1w' ;
+            para.mask_thr = 0.15 ; 
             
         case 3 % MTw
             para.mag_dir = 'mtw/mag/' ;
             para.ph_dir = 'mtw/ph/' ;
             para.TEs = 2.3*[1 2 3 4 5 6] ; 
-            para.output_dir = 'QSM_mtw_pass2' ;
-            para.mask_thr = 0.25 ; % larger threshold smaller mask
+            para.output_dir = 'QSM_mtw' ;
+            para.mask_thr = 0.1 ;
  
     end
     %%%%% END OF USER PARAMETERS %%%%%
     
+MPM_QSM(para) ;
     
-%     [QSM_V, QSM_all(:,:,:), QSMinvrot_V, QSM_all_invrot(:,:,:)] = MPM_QSM(para) ;
-%     [QSM_V, QSM_all(:,:,:,run), QSMinvrot_V, QSM_all_invrot(:,:,:,run)] = MPM_QSM(para) ;
-[~, ~, ~, ~] = MPM_QSM(para) ;
-    
-end
-
-
-if strcmp(calc_mean_qsm, 'yes')
-    
-    disp('calculating mean QSM across acquisitions')
-    QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
-    QSM_all_mean = mean(QSM_all, 4) ;
-    
-    QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
-    QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
-    
-    
-    QSM_V.fname = fullfile(para.out_root_dir,'QSM_pdw_t1w_mean.nii') ;
-    spm_write_vol(QSM_V, QSM_pdw_t1w_mean) ;
-    QSM_V.fname = fullfile(para.out_root_dir,'QSM_all_mean.nii') ;
-    spm_write_vol(QSM_V, QSM_all_mean) ;
-    
-    
-    QSMinvrot_V.fname = fullfile(para.out_root_dir,'QSM_pdw_t1w_invrot_mean.nii') ;
-    spm_write_vol(QSMinvrot_V, QSM_pdw_t1w_invrot_mean) ;
-    QSMinvrot_V.fname = fullfile(para.out_root_dir,'QSM_all_invrot_mean.nii') ;
-    spm_write_vol(QSMinvrot_V, QSM_all_invrot_mean) ;
 end
 
 sprintf('total processing finished after %s' , secs2hms(toc(totstart)))

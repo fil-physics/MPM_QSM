@@ -35,9 +35,6 @@
 %                                       (also known as iterative Tikhonov),
 %                                       may give more contrast than Star-QSM but is less robust to noise
 %                          'Star-QSM' - is very robust to noise and quick
-% calc_mean_qsm          : 'yes' or 'no', if 'yes' mean QSM from the three
-%                           MPM acquisitions will be calculated, ATTENTION: currently nor
-%                           coregistration between the scans is implemented
 
 %%%% Inputs - directories, parameters and files specific to given contrast
 % ATTENTION: ensure only niftis you want to use are in that folder, with increasing echo numbering:
@@ -165,10 +162,12 @@ tstart = tic ;
     qmask(~isfinite(qmask)) = 0;
     qmask(qmask>para.mask_thr) = 1 ;
     qmask(qmask<=para.mask_thr) = 0 ;
+    % filling holes in the mask
     qmask = imfill(qmask,6,'holes') ;
     qmask = smooth3(qmask, 'gaussian') ;
     qmask(qmask>0.6) = 1 ;
     qmask(qmask<=0.6) = 0 ;
+
     qmask = int16(qmask) ;
     createNifti(qmask, 'mask.nii', mat_image)
     clear qmask
@@ -179,7 +178,7 @@ tstart = tic ;
         qmask_rot(:,:,slice) = spm_slice_vol(mask_V, img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
     qmask_rot(~isfinite(qmask_rot)) = 0 ;
-    createNifti(qmask_rot, 'mask_rot.nii', mat_scanner)    
+    createNifti(int16(qmask_rot), 'mask_rot.nii', mat_scanner)    
     
     %% SEPIA - background field removal and dipole inversion yielding final QSM
     
@@ -207,7 +206,7 @@ tstart = tic ;
     input(4).name = header_fullfile ;
     
     algorParam.bfr.refine = 0 ;
-    algorParam.bfr.erode_radius = 0 ;
+    algorParam.bfr.erode_radius = 1 ;
     algorParam.bfr.method = 'pdf' ;
     algorParam.bfr.tol = 0.1 ;
     algorParam.bfr.iteration = 50 ;

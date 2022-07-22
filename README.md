@@ -4,15 +4,12 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 
 # Main computational steps:
 
- 1) complex-fit over echoes for PDw and T1w images,
-    simple phase difference for MTw images,
-    for odd and even echoes done separately
- 2) ROMEO phase unwrapping
- 3) masking based on ROMEO quality map
- 4) rotation to scanner space for oblique acquisitions using SPM
- 5) PDF background field removal within SEPIA toolbox
- 6) star QSM for dipole inversion as default (optional: non-linear dipole inversion) within SEPIA toolbox
- 7) rotation back of QSM results to image space (for comparisons with PD, R2*, R1 and MT maps) using SPM
+ 1) phase unwrapping and B0 map calculation using ROMEO
+ 2) masking based on ROMEO quality map
+ 3) rotation to scanner space for oblique acquisitions using SPM
+ 4) PDF background field removal within SEPIA toolbox
+ 5) star QSM for dipole inversion as default (optional: non-linear dipole inversion) within SEPIA toolbox
+ 6) rotation back of QSM results to image space (for comparisons with PD, R2*, R1 and MT maps) using SPM
 
 
 # Installation steps:

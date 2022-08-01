@@ -1,13 +1,11 @@
 %%% Description: MPM QSM pipeline
 % main steps:
-% 1) complex-fit over echoes for pdw and t1w images,
-%    simple phase difference for mtw images
-%    for odd and even echoes done separately
-% 2) ROMEO phase unwrapping
-% 3) masking based on ROMEO quality map
-% 4) rotation to scanner space
-% 5) PDF background field removal
-% 6) star QSM for dipole inversion as default (optional: non-linear dipole inversion)
+%  1) phase unwrapping and B0 map calculation using ROMEO
+%  2) masking based on ROMEO quality map
+%  3) rotation to scanner space for oblique acquisitions using SPM
+%  4) PDF background field removal within SEPIA toolbox
+%  5) star QSM for dipole inversion as default (optional: non-linear dipole inversion) within SEPIA toolbox
+%  6) rotation back of QSM results to image space (for comparisons with PD, R2*, R1 and MT maps) using SPM (optional: non-linear dipole inversion)
 
 
 %%% Publications:
@@ -52,8 +50,8 @@
 % QSM_pdw_t1w_invrot_mean.nii  : mean QSM over PDw and T1w contrasts in image space
 
 %%%% final results - per contrast in subfolders in out_root_dir:
-% sepia_QSM.nii             : QSM in scanner space
-% sepia_QSM_invrot.nii      : QSM in image space
+% sepia_QSM.nii OR sepia_Chimap.nii            : QSM in scanner space (name depends on SEPIA toolbox version)
+% sepia_QSM_invrot.nii                         : QSM in image space
 
 %%%% additional outputs:
 % ph.nii                    : two volumes (odd and even) of fitted phase
@@ -63,8 +61,8 @@
 % mask_rot.nii              : binary mask in scanner space
 % B0.nii                    : field map in Hz in image space
 % B0_rot.nii                : field map in Hz in scanner space
-% sepia_local-field.nii.gz  : map of local field variations (after background field removal using PDF)
-% settings_romeo.txt        : settings used for ROMEO unwrapping (useful if unwrapping again outside MPM QSM the pipeline)
+% sepia_local-field.nii.gz OR  sepia_localfield.nii.gz : map of local field variations (after background field removal using PDF)
+% settings_romeo.txt        : settings used for ROMEO unwrapping (useful if unwrapping again outside the MPM_QSM pipeline)
 % header_sepia.mat          : header used for SEPIA toolbox (useful when exploring SEPIA GUI)
 
 % script created by Barbara Dymerska
@@ -232,19 +230,38 @@ tstart = tic ;
     disp('background field removal using PDF')
     BackgroundRemovalMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
+    % added for back-compatibility to older SEPIA versions
+    if exist('sepia_local-field.nii.gz','file') == 2
+        input(1).name = 'sepia_local-field.nii.gz' ;
+    elseif exist('sepia_localfield.nii.gz','file') == 2
+        input(1).name = 'sepia_localfield.nii.gz' ;
+    else
+        error('no local field file found in output dir')
+    end
+
     fprintf('dipole inversion using %s', algorParam.qsm.method)
-    input(1).name = fullfile(output_fulldir, 'sepia_local-field.nii.gz') ;
     QSMMacroIOWrapper(input,output_basename,input(2).name,algorParam);
     
     
     disp('rotation of QSM back to the original image space')
-    gunzip('sepia_QSM.nii.gz')
-    QSM = nifti('sepia_QSM.nii') ;
+    % added for back-compatibility to older SEPIA versions
+    if exist('sepia_QSM.nii.gz') == 2
+        gunzip('sepia_QSM.nii.gz')
+        QSM = nifti('sepia_QSM.nii') ;
+        QSM_V = spm_vol('sepia_QSM.nii');
+    elseif exist('sepia_Chimap.nii.gz') == 2
+        gunzip('sepia_Chimap.nii.gz')
+        QSM = nifti('sepia_Chimap.nii') ;
+        QSM_V = spm_vol('sepia_Chimap.nii');
+    else
+        error('no QSM maps in output dir')
+    end
+
     QSM = QSM.dat(:,:,:) ;
     
     scanner2img_mat = mat_scanner\mat_image ;
     QSMinvrot = zeros(data_dim) ;
-    QSM_V = spm_vol('sepia_QSM.nii');
+    
     for slice = 1 : data_dim(3)
         QSMinvrot(:,:,slice) = spm_slice_vol(QSM_V, scanner2img_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
     end
@@ -253,13 +270,15 @@ tstart = tic ;
     QSMinvrot_V.fname = 'sepia_QSM_invrot.nii';
     spm_write_vol(QSMinvrot_V, QSMinvrot);
     
-    delete sepia_mask-qsm.nii.gz sepia_QSM.nii.gz
+    warning('off'); 
+    delete sepia_mask-qsm.nii.gz sepia_QSM.nii.gz sepia_mask_QSM.nii.gz sepia_Chimap.nii.gz
     if strcmp(para.data_cleanup,'small') || strcmp(para.data_cleanup,'big')
-        delete mag.nii corrected_phase.nii mask.nii mask_rot.nii ph.nii ph_romeo.nii quality.nii sepia_local-field.nii.gz
+        delete mag.nii corrected_phase.nii mask.nii mask_rot.nii ph.nii ph_romeo.nii quality.nii sepia_local-field.nii.gz sepia_localfield.nii.gz
     end
     if strcmp(para.data_cleanup,'big')
         delete B0.nii B0_rot.nii
     end
+    warning('on');
     sprintf('finished after %s' , secs2hms(toc(tstart)))
 end
 

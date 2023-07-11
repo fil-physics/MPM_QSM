@@ -19,10 +19,7 @@ QSM pipeline for Multi Parametric Mapping acquisitions
 	https://github.com/fil-physics/MPM_QSM
 	or clone it to your GitHub repository
 
-2. Download compiled version of ROMEO either for windows or linux:
-	
-	https://github.com/korbinian90/ROMEO/releases/tag/v3.2.0
-	and unzip it in chosen destination
+2. Download compiled version of [ROMEO](https://github.com/korbinian90/CompileMRI.jl/releases/tag/v3.6.4) within MRItools either for windows or linux and unzip it in chosen destination
 
 3. Download sepia toolbox:
 	

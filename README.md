@@ -58,9 +58,7 @@ Liu T, et al. "Nonlinear formulation of the magnetic field to source relationshi
 3. ROMEO phase uwnrapping:
 Dymerska B, and Eckstein K et al. "Phase unwrapping with a rapid opensource minimum spanning tree algorithm (ROMEO)." Magnetic Resonance in Medicine (2020).
 
-4. PDF background field removal:
-Liu T, et al. "A novel background field removal method for MRI using projection onto dipole fields." NMR in Biomedicine 24.9 (2011): 1129-1136.
 
-5. starQSM:
+4. starQSM:
 Wei H, et al. "Streaking artifact reduction for quantitative susceptibility mapping of sources with large dynamic range." NMR in Biomedicine 28.10 (2015): 1294-1303.
 

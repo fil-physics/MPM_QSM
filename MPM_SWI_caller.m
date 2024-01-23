@@ -2,41 +2,53 @@
 % main steps:
 % 1) rotation of the magnitude and phase into scanner space
 %   (in complex domain so that phase wraps are not blurred)
-% 2) CLEAR SWI 
+% 2) CLEAR SWI
 %   - SNR-optimal magnitude combination,
 %   - phase mask calculation and multiplication with combined magnitude
 %   - minimum intensity projection
+% 3) rotation  of CLEAR-SWI and MIP back into image space
 
 %%% Publications:
 % Please remember to give credit to the authors of the methods used:
-% 1. CLEARSWI paper: Eckstein, Korbinian, et al. Neuroimage 237 (2021): 118175.
+% 1. MORSE-CODE used for image reconstruction: Oliver Josephs, Barbara Dymerska, et al. ???
+% 2. CLEARSWI used for SWI calculation: Korbinian Eckstein, et al. Neuroimage 237 (2021): 118175.
 
 
-%%% Inputs:
+%%%% Inputs in para. - structure:
 % clearswi_command       : path to  followed by clearswi command, i.e. (in linux) '/your_path/bin/clearswi' or (in windows) 'D:\your_path\bin\clearswi'
 % in_root_dir            : root directory to input nifti files
 % out_root_dir           : root directory to output nifti files
 % sensitivity_corr       : corrects for bias field, 'on' or 'off'
 % filter_size            : high-pass filter kernel size, for 7T MPM [2 2 0] is adviced
-
-%%%% Inputs - directories, parameters and files specific to given contrast
-% ATTENTION: ensure only niftis you want to use are in that folder, with increasing echo numbering:
-% mag_dir                : folder with magnitude niftis
-% ph_dir                 : folder with phase inftis
+% data_cleanup           : if true it will leave only final results,
+%                          if false it will leave intermediate outputs
+%%% Input directories, parameters and files specific to given contrast:
 % TEs                    : echo time in ms
 % output_dir             : output SWI directory for a specific MPM contrast
 
-%%% Outputs:
-%%%% combined final results in output_dir:
+% ATTENTION: ensure only niftis you want to use are in that folder, with increasing echo numbering:
+% mag_dir                : folder with magnitude niftis
+% ph_dir                 : folder with phase inftis
+% if your data are stored in 4D format (4th dim echoes) then use (otherwise leave empty):
+% mag_file               : filename of a 4D magnitude file in mag_dir 
+% ph_file                : filename of a 4D phase file in ph_dir
+
+%%%% Outputs:
+%%% combined final results in output_dir:
+%%% in the scanner space:
 % clearswi.nii          : SWI image
 % mip.nii               : Minimum Intensity Projection over 7 axial slices
+%%% in the original image space:
+% clearswi_invrot.nii   : SWI image
+% mip_invrot.nii        : Minimum Intensity Projection over 7 axial slices
 
-%%%% additional outputs:
-% mag_rot.nii               : phase rotated into scanner space (if FOV was angulated)
-% ph_rot.nii                : magnitude rotated into scanner space (if FOV was angulated)
+%%%% Optional extra outputs:
+% these include real and imaginary data, filtered phase, combined phase,
+% unwrapped phase and many more if para.data_cleanup = false 
 
 % script created by Barbara Dymerska
 % @ UCL FIL Physics
+
 
 totstart = tic ;
 

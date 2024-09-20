@@ -10,7 +10,7 @@
 
 %%% Publications:
 % Please remember to give credit to the authors of the methods used:
-% 1. MORSE-CODE used for image reconstruction: Oliver Josephs, Barbara Dymerska, et al. ???
+% 1. MORSE-CODE used for image reconstruction: "MORSE CODE: Multiple Orthogonal Reference Sensitivity Encoding Combined Over Dominant Eigencoils" by O. Josephs and B. Dymerska et al.
 % 2. CLEARSWI used for SWI calculation: Korbinian Eckstein, et al. Neuroimage 237 (2021): 118175.
 
 
@@ -53,12 +53,13 @@
 totstart = tic ;
 
 %%%%% USER PARAMETERS %%%%%
-para.clearswi_command = '/your_path/mritools_Linux_3.6.4/bin/clearswi' ;
+para.clearswi_command = '/your_path/mritools_ubuntu-20.04_4.3.0/bin/clearswi' ;
 para.in_root_dir = '/your/root/path' ;
 para.out_root_dir =   '/your/output/path';
 para.sensitivity_corr = 'on' ; % corrects for bias field, 'on' or 'off'
 para.filter_size = [2 2 0] ; % for 7T MPM [2 2 0] is adviced
 para.data_cleanup = true ; % true - cleans intermediate outputs, false - leaves them
+para.MIP_Nslices = 14;
 
 for run = 1
     
@@ -69,7 +70,7 @@ for run = 1
             para.ph_file = '' ; % specify if data saved as 4D
             para.mag_file = ''; % specify if data saved as 4D
             para.TEs =  [2.2 4.58 6.96 9.34 11.72 14.1] ;  % echo time in ms
-            para.output_dir = 'pdw/SWI' ; % output directory for a specific submeasurement from MPM
+            para.output_dir = 'pdw/CLEAR_SWI' ; % output directory for a specific submeasurement from MPM
            
         case 2 % T1w
             para.mag_dir = 't1w/mag' ;
@@ -77,7 +78,7 @@ for run = 1
             para.ph_file = '' ; 
             para.mag_file = ''; 
             para.TEs = [2.3 4.68 7.06 9.44 11.82 14.2] ;
-            para.output_dir = 't1w/SWI' ;
+            para.output_dir = 't1w/CLEAR_SWI' ;
             
         case 3 % MTw
             para.mag_dir = 'mtw/mag' ;
@@ -85,7 +86,7 @@ for run = 1
             para.ph_file = '' ; 
             para.mag_file = '';
             para.TEs = [2.2 4.58 6.96 9.34] ;
-            para.output_dir = 'mtw/SWI' ;
+            para.output_dir = 'mtw/CLEAR_SWI' ;
 
     end
     %%%%% END OF USER PARAMETERS %%%%%

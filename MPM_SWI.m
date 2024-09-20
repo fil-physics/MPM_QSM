@@ -123,6 +123,7 @@ img2scanner_mat = mat_image\mat_scanner_read_x ;
 real_rot = zeros(data_dim) ;
 imag_rot = zeros(data_dim) ;
 data_dim_xy = data_dim(1:2);
+if size(data_dim,2)==3; data_dim(4) = 1; end
 for echo = 1:data_dim(4)
     for slice = 1 : data_dim(3)
         real_rot(:,:,slice,echo) = spm_slice_vol(real_V(echo), img2scanner_mat*spm_matrix([0 0 slice]), data_dim_xy, -7) ;
@@ -150,17 +151,20 @@ clear cmplx_rot real_rot imag_rot
 
 %%
 disp('CLEAR SWI calculation')
+if isunix; paths = getenv('LD_LIBRARY_PATH'); setenv('LD_LIBRARY_PATH'); end
 if para.data_cleanup
-    status = system(sprintf('%s -p %s -m %s -t [%s] --filter-size [%s] --mag-sensitivity-correction %s', para.clearswi_command, ph_rot_merged_file, mag_rot_merged_file, num2str(TEs), num2str(para.filter_size), para.sensitivity_corr)) ;
+    status = system(sprintf('%s -p %s -m %s -t [%s] --filter-size [%s] --mag-sensitivity-correction %s -s %i', para.clearswi_command, ph_rot_merged_file, mag_rot_merged_file, num2str(TEs), num2str(para.filter_size), para.sensitivity_corr, para.MIP_Nslices)) ;
 else
-    status = system(sprintf('%s -p %s -m %s -t [%s] --filter-size [%s] --mag-sensitivity-correction %s --writesteps %s', para.clearswi_command, ph_rot_merged_file, mag_rot_merged_file, num2str(TEs), num2str(para.filter_size), para.sensitivity_corr, output_fulldir)) ;
+    status = system(sprintf('%s -p %s -m %s -t [%s] --filter-size [%s] --mag-sensitivity-correction %s -s %i --writesteps %s', para.clearswi_command, ph_rot_merged_file, mag_rot_merged_file, num2str(TEs), num2str(para.filter_size), para.sensitivity_corr, para.MIP_Nslices, output_fulldir)) ;
 end
+if isunix; setenv('LD_LIBRARY_PATH', paths); end
 if status == 1
     error('CLEARSWI did not run properly - check your installation path')
 end
 
+
 % rotating SWI and MIP to original MPM space
-clearswi = nifti('clearswi.nii').dat(:,:,:);
+clearswi=nifti('clearswi.nii').dat(:,:,:);
 mip = nifti('mip.nii').dat(:,:,:);
 clearswi = ipermute(clearswi,[3 1 2]);
 mip = ipermute(mip,[3 1 2]);

@@ -84,6 +84,7 @@ tstart = tic ;
     
     TEs = para.TEs ;
     
+    if isempty(para.ph_file) && isempty(para.mag_file)
     ph_files = spm_select('FPList', ph_fulldir, '^.*\.(nii|img)$');
     mag_files = spm_select('FPList', mag_fulldir, '^.*\.(nii|img)$');
         
@@ -107,7 +108,10 @@ tstart = tic ;
 
     createNifti(ph, ph_merged_file, ph_1tp.mat)
     createNifti(mag, mag_merged_file, mag_1tp.mat)
-
+    else 
+        ph_merged_file = fullfile(ph_fulldir, para.ph_file) ;
+        mag_merged_file = fullfile(mag_fulldir, para.mag_file) ;
+    end
 
     disp('phase unwrapping with ROMEO and:')
     disp('...removing global mean value')

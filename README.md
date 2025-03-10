@@ -75,6 +75,7 @@ Dymerska B, and Eckstein K et al. "Phase unwrapping with a rapid opensource mini
 Liu T, et al. "A novel background field removal method for MRI using projection onto dipole fields." NMR in Biomedicine 24.9 (2011): 1129-1136.
 
 7. starQSM:
+
 Wei H, et al. "Streaking artifact reduction for quantitative susceptibility mapping of sources with large dynamic range." NMR in Biomedicine 28.10 (2015): 1294-1303.
 
 ## For MPM_SWI:

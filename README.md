@@ -80,7 +80,7 @@ Wei H, et al. "Streaking artifact reduction for quantitative susceptibility mapp
 
 ## For MPM_SWI:
 1. MORSE-CODE used for image reconstruction:
-   Oliver Josephs, Barbara Dymerska, et al. ???
+    Josephs O, Dymerska B, et al. "MORSE: Multiple Orthogonal Reference Sensitivity Encoding": https://arxiv.org/abs/2510.09098
 3. CLEARSWI used for SWI calculation:
    Eckstein, Korbinian, et al. "Improved susceptibility weighted imaging at ultra-high field using bipolar multi-echo acquisition and optimized image processing: CLEAR-SWI." Neuroimage 237 (2021): 118175.
 

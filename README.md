@@ -58,7 +58,7 @@ Please remember to give credit to the authors of the methods used:
 
 ## For MPM_QSM:
 1. MORSE-CODE used for image reconstruction:
-   Oliver Josephs, Barbara Dymerska, et al. ???
+  Josephs O, Dymerska B, et al. "MORSE: Multiple Orthogonal Reference Sensitivity Encoding": https://arxiv.org/abs/2510.09098
 2. SEPIA toolbox:
 Chan KS, Marques JP. "SEPIA—Susceptibility mapping pipeline tool for phase images." Neuroimage 227 (2021), 117611.
 

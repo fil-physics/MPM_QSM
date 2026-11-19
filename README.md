@@ -57,30 +57,35 @@ CLEAR-SWI pipeline for Multi Parametric Mapping acquisitions
 Please remember to give credit to the authors of the methods used:
 
 ## For MPM_QSM:
-1. MORSE-CODE used for image reconstruction:
-  Josephs O, Dymerska B, et al. "MORSE: Multiple Orthogonal Reference Sensitivity Encoding": https://arxiv.org/abs/2510.09098
-2. SEPIA toolbox:
+If MORSE image reconstruction was used:
+1. [MORSE](https://doi.org/10.1007/s10334-026-01387-y): Josephs, O., Dymerska, B., Graedel, N.N. et al. Online image reconstruction via Multiple Orthogonal Reference Sensitivity Encoding (MORSE). Magn Reson Mater Phy (2026).
+2. [MORSE-PI](https://doi.org/10.1007/s10334-026-01434-8): Dymerska, B., Josephs, O., James, B. et al. MORSE-PI: flexible and artefact-free image reconstruction for structural and functional QSM and other phase-critical imaging applications. Magn Reson Mater Phy (2026).
+
+For all types of image reconstructions:
+
+3. SEPIA toolbox:
 Chan KS, Marques JP. "SEPIA—Susceptibility mapping pipeline tool for phase images." Neuroimage 227 (2021), 117611.
 
-3. SPM12 - rigid body registration:
+4. SPM - rigid body registration:
 Friston KJ, et al. "Movement-related effect in fMRI time-series." Magnetic Resonance in Medicine 35 (1995):346-355
 
-4. complex fit of the phase:
+5. complex fit of the phase:
 Liu T, et al. "Nonlinear formulation of the magnetic field to source relationship for robust quantitative susceptibility mapping." Magnetic resonance in medicine 69.2 (2013): 467-476.
 
-5. ROMEO phase unwrapping:
+6. [ROMEO](https://doi.org/10.1002/mrm.28563) phase unwrapping:
 Dymerska B, and Eckstein K et al. "Phase unwrapping with a rapid opensource minimum spanning tree algorithm (ROMEO)." Magnetic Resonance in Medicine (2020).
 
-6. PDF background field removal:
+7. PDF background field removal:
 Liu T, et al. "A novel background field removal method for MRI using projection onto dipole fields." NMR in Biomedicine 24.9 (2011): 1129-1136.
 
-7. starQSM:
-
+8. starQSM:
 Wei H, et al. "Streaking artifact reduction for quantitative susceptibility mapping of sources with large dynamic range." NMR in Biomedicine 28.10 (2015): 1294-1303.
 
 ## For MPM_SWI:
-1. MORSE-CODE used for image reconstruction:
-    Josephs O, Dymerska B, et al. "MORSE: Multiple Orthogonal Reference Sensitivity Encoding": https://arxiv.org/abs/2510.09098
-3. CLEARSWI used for SWI calculation:
+1. [CLEARSWI](10.1016/j.neuroimage.2021.118175) used for SWI calculation:
    Eckstein, Korbinian, et al. "Improved susceptibility weighted imaging at ultra-high field using bipolar multi-echo acquisition and optimized image processing: CLEAR-SWI." Neuroimage 237 (2021): 118175.
+Additionally, if you use MORSE image reconstruction with rebust online phase image reconstruction please cite:
+2. [MORSE](https://doi.org/10.1007/s10334-026-01387-y): Josephs, O., Dymerska, B., Graedel, N.N. et al. Online image reconstruction via Multiple Orthogonal Reference Sensitivity Encoding (MORSE). Magn Reson Mater Phy (2026).
+3. [MORSE-PI](https://doi.org/10.1007/s10334-026-01434-8): Dymerska, B., Josephs, O., James, B. et al. MORSE-PI: flexible and artefact-free image reconstruction for structural and functional QSM and other phase-critical imaging applications. Magn Reson Mater Phy (2026).
+
 
